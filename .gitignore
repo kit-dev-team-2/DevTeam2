@@ -16,6 +16,7 @@ ProjectSettings\Packages\com.unity.testtools.codecoverage\Settings.json
 PerformanceTestRun*.*
 StreamingAssets*
 !NativeSamples.zip
+Packages/
 
 ### macOS ###
 # General
