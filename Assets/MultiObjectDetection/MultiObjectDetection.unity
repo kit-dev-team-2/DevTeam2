@@ -1354,6 +1354,33 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1744462753}
     m_Modifications:
+    - target: {fileID: 1784151354240486895, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "-----------------------------------------------------------\n<b>\uAC1C\uBC1C
+        2\uD300 </b>\n-----------------------------------------------------------"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2279054344620247711, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "1\uCD08 \uAC04\uACA9\uC73C\uB85C \uB9C8\uCEE4 \uC0DD\uC131\uB429\uB2C8\uB2E4. "
+      objectReference: {fileID: 0}
+    - target: {fileID: 2447241005283040037, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "\uD504\uB85C\uC81D\uD2B8: \uC18C\uB9AC \uC2DC\uAC01\uD654 "
+      objectReference: {fileID: 0}
+    - target: {fileID: 4386550124580111073, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5185259287786992558, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "-----------------------------------------------------------\n<b>\uAC1C\uBC1C
+        2 </b>\n-----------------------------------------------------------"
+      objectReference: {fileID: 0}
+    - target: {fileID: 5319885961176894441, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "-----------------------------------------------------------\n<b>\uAC1C\uBC1C
+        2\uD300 </b>\n-----------------------------------------------------------"
+      objectReference: {fileID: 0}
     - target: {fileID: 5846769668076299689, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: OnPause.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
