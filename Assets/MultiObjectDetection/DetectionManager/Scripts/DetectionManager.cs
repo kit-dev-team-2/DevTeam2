@@ -16,15 +16,15 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private PassthroughCameraAccess m_cameraAccess;
 
         [Header("Controls configuration")]
-        [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;
+        [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;  // A 버튼
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
 
         [Header("Placement configureation")]
-        [SerializeField] private GameObject m_spwanMarker;
+        [SerializeField] private GameObject m_spwanMarker;  // 3D 마커 프리팹
         [SerializeField] private EnvironmentRayCastSampleManager m_environmentRaycast;
-        [SerializeField] private float m_spawnDistance = 0.25f;
+        [SerializeField] private float m_spawnDistance = 0.25f; // 최소 거리
         [SerializeField] private AudioSource m_placeSound;
 
         [Header("Sentis inference ref")]
@@ -38,6 +38,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         private bool m_isStarted = false;
         private bool m_isSentisReady = false;
         private float m_delayPauseBackTime = 0;
+        private float m_spawnTimer = 1.0f;  // 3D 마커 스폰 타이머
 
         #region Unity Functions
         private void Awake() => OVRManager.display.RecenteredPose += CleanMarkersCallBack;
@@ -67,11 +68,20 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             }
             else
             {
-                // Press A button to spawn 3d markers
-                if (OVRInput.GetUp(m_actionButton) && m_delayPauseBackTime <= 0)
+                // // A 버튼 누르면 마커 생성
+                // if (OVRInput.GetUp(m_actionButton) && m_delayPauseBackTime <= 0)
+                // {
+                //     SpwanCurrentDetectedObjects();
+                // }
+
+                // m_spawnTimer 만큼 마커 자동 생성
+                m_spawnTimer -= Time.deltaTime;
+                if (m_spawnTimer <= 0.0f)
                 {
                     SpwanCurrentDetectedObjects();
+                    m_spawnTimer = 1.0f;    // 타이머를 1초로 재설정
                 }
+
                 // Cooldown for the A button after return from the pause menu
                 m_delayPauseBackTime -= Time.deltaTime;
                 if (m_delayPauseBackTime <= 0)

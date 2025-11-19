@@ -86,7 +86,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         {
             m_initialMenu = true;
             IsPaused = true;
-            m_initialPanel.SetActive(true);
+            m_initialPanel.SetActive(true); // 초기 화면에 표시되는 패널 활성화
             m_noPermissionPanel.SetActive(false);
         }
 
@@ -112,7 +112,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         #endregion
 
         #region Ui state: detection information
-        private void UpdateLabelInformation()
+        private void UpdateLabelInformation()   // 화면 하단에 뜨는 패널
         {
             m_labelInformation.text = $"Unity Sentis version: 2.1.3\nAI model: Yolo\nDetecting objects: {m_objectsDetected}\nObjects identified: {m_objectsIdentified}";
         }
