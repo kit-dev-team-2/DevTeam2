@@ -916,6 +916,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serverUrl: ws://192.168.1.232:8080
+  ack_duration: 5
 --- !u!1 &1140149730
 GameObject:
   m_ObjectHideFlags: 0
