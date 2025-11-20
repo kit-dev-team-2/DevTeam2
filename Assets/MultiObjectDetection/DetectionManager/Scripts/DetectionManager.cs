@@ -78,6 +78,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 m_spawnTimer -= Time.deltaTime;
                 if (m_spawnTimer <= 0.0f)
                 {
+                    // 1. 기존 마커를 모두 삭제합니다.
+                    ClearAllMarkers();
                     SpwanCurrentDetectedObjects();
                     m_spawnTimer = 1.0f;    // 타이머를 1초로 재설정
                 }
@@ -113,15 +115,24 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         /// <summary>
         /// Clean 3d markers when the tracking space is re-centered.
         /// </summary>
-        private void CleanMarkersCallBack()
+        private void ClearAllMarkers()
         {
             foreach (var e in m_spwanedEntities)
             {
-                Destroy(e, 0.1f);
+                Destroy(e);
             }
             m_spwanedEntities.Clear();
             OnObjectsIdentified?.Invoke(-1);
         }
+
+        /// <summary>
+        /// OVRManager의 RecenteredPose 이벤트에 연결될 콜백 함수입니다.
+        /// </summary>
+        private void CleanMarkersCallBack()
+        {
+            ClearAllMarkers();
+        }
+
         /// <summary>
         /// Spwan 3d markers for the detected objects
         /// </summary>

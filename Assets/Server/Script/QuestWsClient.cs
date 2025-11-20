@@ -9,9 +9,13 @@ public class QuestWsClient : MonoBehaviour
 {
     private static QuestWsClient instance;
 
-    [Header("ws://127.0.0.1:8080  (adb reverse 쓰면 127.0.0.1)")]
-    [SerializeField] string serverUrl = "ws://192.168.0.121:8080";
-    [SerializeField] int ack_duration = 5;  //seconds
+    [Header("WebSocket 서버 설정")]
+    [SerializeField] string hostIP = "192.168.0.121";   // 호스트(PC) 서버 IP 주소
+    [SerializeField] string portNum = "8080";   // 서버 포트 번호
+    string serverAddress => $"ws://{hostIP}:{portNum}"; // WebSocket 서버 주소
+
+    [Header("ack 주기 설정 (ms)")]
+    [SerializeField] int ack_duration = 5000;
 
     ClientWebSocket ws;
     CancellationTokenSource cts;
@@ -68,8 +72,8 @@ public class QuestWsClient : MonoBehaviour
 
         try
         {
-            Debug.Log($"WS connecting: {serverUrl}");
-            await ws.ConnectAsync(new Uri(serverUrl), cts.Token);
+            Debug.Log($"WS connecting: {serverAddress}");
+            await ws.ConnectAsync(new Uri(serverAddress), cts.Token);
             Debug.Log("WS connected ✅");
 
             // ✅ 연결 성공 직후 hello 전송
@@ -106,7 +110,7 @@ public class QuestWsClient : MonoBehaviour
                 await SendJson(ack);
                 // Debug.Log("[WS] sent ack");
 
-                await Task.Delay(ack_duration * 1000, cts.Token);
+                await Task.Delay(ack_duration, cts.Token);
             }
         }
         catch (TaskCanceledException)
