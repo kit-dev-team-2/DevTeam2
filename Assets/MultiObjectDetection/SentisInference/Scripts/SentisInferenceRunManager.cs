@@ -70,6 +70,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         #region Public Functions
         public void RunInference(PassthroughCameraAccess cameraAccess)
         {
+            Debug.Log($"[Sentis] Inference started at: {DateTime.Now.ToString("HH:mm:ss.fff")}");
             // If the inference is not running prepare the input
             if (!m_started)
             {
@@ -239,6 +240,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                     break;
                 case 5:
                     m_download_state++;
+                    Debug.Log($"[Sentis] Inference finished at: {DateTime.Now.ToString("HH:mm:ss.fff")}");  // 시간 측정 코드
                     m_started = false;
                     m_output?.Dispose();
                     m_labelIDs?.Dispose();

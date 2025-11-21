@@ -31,6 +31,9 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private SentisInferenceRunManager m_runInference;
         [SerializeField] private SentisInferenceUiManager m_uiInference;
         [Space(10)]
+        // SoundObjectMatcher 클래스에 대한 참조를 추가합니다.
+        [SerializeField] private SoundObjectMatcher m_soundObjectMatcher;
+        [Space(10)]
         public UnityEvent<int> OnObjectsIdentified;
 
         private bool m_isPaused = true;
@@ -38,7 +41,6 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         private bool m_isStarted = false;
         private bool m_isSentisReady = false;
         private float m_delayPauseBackTime = 0;
-        private float m_spawnTimer = 1.0f;  // 3D 마커 스폰 타이머
 
         #region Unity Functions
         private void Awake() => OVRManager.display.RecenteredPose += CleanMarkersCallBack;
@@ -68,21 +70,9 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             }
             else
             {
-                // // A 버튼 누르면 마커 생성
-                // if (OVRInput.GetUp(m_actionButton) && m_delayPauseBackTime <= 0)
-                // {
-                //     SpwanCurrentDetectedObjects();
-                // }
-
-                // m_spawnTimer 만큼 마커 자동 생성
-                m_spawnTimer -= Time.deltaTime;
-                if (m_spawnTimer <= 0.0f)
-                {
-                    // 1. 기존 마커를 모두 삭제합니다.
-                    ClearAllMarkers();
-                    SpwanCurrentDetectedObjects();
-                    m_spawnTimer = 1.0f;    // 타이머를 1초로 재설정
-                }
+                // 매 프레임, 새로운 소리와 매칭되는 객체가 있는지 확인하고 마커를 생성합니다.
+                // (SoundObjectMatcher가 내부적으로 QuestWsClient를 확인합니다)
+                SpawnMarkersForMatchedObjects();
 
                 // Cooldown for the A button after return from the pause menu
                 m_delayPauseBackTime -= Time.deltaTime;
@@ -134,12 +124,23 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         }
 
         /// <summary>
-        /// Spwan 3d markers for the detected objects
+        /// SoundObjectMatcher를 통해 소리와 매칭된 객체를 찾아 마커를 생성합니다.
         /// </summary>
-        private void SpwanCurrentDetectedObjects()
+        private void SpawnMarkersForMatchedObjects()
         {
             var count = 0;
-            foreach (var box in m_uiInference.BoxDrawn)
+            // SoundObjectMatcher를 사용해 현재 소리와 매칭되는 객체 목록을 가져옵니다.
+            var allDetectedObjects = m_uiInference.BoxDrawn;
+            var matchedObjects = m_soundObjectMatcher.GetMatchedObjects(allDetectedObjects);
+
+            // 매칭된 객체가 있을 경우에만 기존 마커를 지우고 새로 그립니다.
+            if (matchedObjects.Count > 0)
+            {
+                ClearAllMarkers();
+            }
+
+            // 매칭된 객체들에 대해서만 마커를 생성합니다.
+            foreach (var box in matchedObjects)
             {
                 if (PlaceMarkerUsingEnvironmentRaycast(box.WorldPos, box.ClassName))
                 {

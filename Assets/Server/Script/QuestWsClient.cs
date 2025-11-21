@@ -7,7 +7,9 @@ using System.Text;
 
 public class QuestWsClient : MonoBehaviour
 {
-    private static QuestWsClient instance;
+    // 🔻 다른 클래스에서 쉽게 접근할 수 있도록 public static 인스턴스를 만듭니다.
+    public static QuestWsClient Instance { get; private set; }
+    private static QuestWsClient instance; // 이전 버전 호환성을 위해 유지
 
     [Header("WebSocket 서버 설정")]
     [SerializeField] string hostIP = "192.168.0.121";   // 호스트(PC) 서버 IP 주소
@@ -61,6 +63,9 @@ public class QuestWsClient : MonoBehaviour
         public float doa;        // 방향 없으면 0 쓰거나 필드 빼도 됨
         public TagItem[] tags;
     }
+
+    // 🔻 가장 최근에 받은 SoundResultMessage 전체를 저장할 변수
+    private SoundResultMessage _latestSoundResult = null;
 
     // ====== 설정 ======
 
@@ -157,7 +162,7 @@ public class QuestWsClient : MonoBehaviour
             {
                 switch (typeWrap.type)
                 {
-                    case "inference":   // 서버에서 분류 결과 보낼 때 type="inference"로 맞춘다고 가정
+                    case "detection":   // 서버에서 분류 결과 보낼 때 type="detection"으로 변경
                         var res = JsonUtility.FromJson<SoundResultMessage>(json);
                         OnSoundResult(res);
                         break;
@@ -197,26 +202,24 @@ public class QuestWsClient : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[SoundResult] timestamp={msg.timestamp}, doa={msg.doa}");
-        foreach (var t in msg.tags)
+        // 🔻 받은 메시지(msg)를 그대로 _latestSoundResult 변수에 저장하기만 합니다.
+        _latestSoundResult = msg;
+        Debug.Log($"[SoundResult] Received new sound data. Storing message.");
+    }
+
+    /// <summary>
+    /// 가장 최근에 받은 SoundResultMessage 전체를 반환하고, 변수를 비워 중복 처리를 방지합니다.
+    /// </summary>
+    public SoundResultMessage GetAndClearLatestSoundResult()
+    {
+        if (_latestSoundResult == null)
         {
-            Debug.Log($"  {t.label}: {t.score}");
+            return null;
         }
 
-        // 🔻 여기서 점수 보고 어떤 소리인지 판단해서
-        // UI 띄우거나, 이펙트 재생하거나, 다른 스크립트에 이벤트 넘기면 됨
-        // ex) 최고 점수 태그 찾기:
-        float bestScore = -1f;
-        string bestLabel = "";
-        foreach (var t in msg.tags)
-        {
-            if (t.score > bestScore)
-            {
-                bestScore = t.score;
-                bestLabel = t.label;
-            }
-        }
-        Debug.Log($"[SoundResult] TOP = {bestLabel} ({bestScore:F3})");
+        SoundResultMessage resultToReturn = _latestSoundResult;
+        _latestSoundResult = null; // 값을 가져갔으므로 비워줍니다.
+        return resultToReturn;
     }
 
     async Task SendJson<T>(T obj)
@@ -256,12 +259,13 @@ public class QuestWsClient : MonoBehaviour
     void Awake()
     {
         // 싱글톤 + 씬 넘어가도 안 죽게
-        if (instance != null && instance != this)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
-        instance = this;
+        Instance = this;
+        instance = this; // 이전 버전 호환성을 위해 유지
         DontDestroyOnLoad(gameObject);
     }
 }

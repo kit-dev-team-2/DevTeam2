@@ -130,7 +130,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 BoxDrawn.Add(box);
 
                 // Draw 2D box
-                // DrawBox(box, n); // 박스 그리기 비활성화
+                DrawBox(box, n);
             }
         }
 
