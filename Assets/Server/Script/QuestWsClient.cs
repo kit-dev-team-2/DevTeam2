@@ -60,7 +60,7 @@ public class QuestWsClient : MonoBehaviour
     {
         public string type;      // "inference" 같은 값으로 맞춰두면 좋음
         public string timestamp; // "17:16:31" 같은 문자열
-        public float doa;        // 방향 없으면 0 쓰거나 필드 빼도 됨
+        public int doa;        // 방향 없으면 0 쓰거나 필드 빼도 됨
         public TagItem[] tags;
     }
 
