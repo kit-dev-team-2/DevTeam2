@@ -145,9 +145,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 66894734}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 794c35997a7d94855a1617772a1ae4e9, type: 3}
+  m_Script: {fileID: 11500000, guid: 259948ba793094f4d9baa28ac57fc1b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sight: 50
 --- !u!4 &66894736
 Transform:
   m_ObjectHideFlags: 0
@@ -1045,6 +1046,56 @@ Transform:
   - {fileID: 632844192}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1672552460
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1672552462}
+  - component: {fileID: 1672552461}
+  m_Layer: 0
+  m_Name: MarkerPrefabManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1672552461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1672552460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3c9f5b1a20cd4d04b4dd0d6facbb505, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_defaultMarkerPrefab: {fileID: 4199183768428282981, guid: be69472e7a9b58243aa0493fa78acef1, type: 3}
+  m_markerPrefabMappings:
+  - soundLabel: Dog
+    prefab: {fileID: 8166255855613256730, guid: 327c50530478b42a090b975c4067078c, type: 3}
+  - soundLabel: Bark
+    prefab: {fileID: 8166255855613256730, guid: 327c50530478b42a090b975c4067078c, type: 3}
+--- !u!4 &1672552462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1672552460}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.785171, y: 6.488289, z: 15.455624}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1711459072 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2184060436030677583, guid: 927c1b782bb796b4b9b433d533cbccca, type: 3}
@@ -1622,6 +1673,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1373946501}
     - target: {fileID: 7042133912099342453, guid: 946c4bcf5ee78c2438bd71dd2f9fe1f9, type: 3}
+      propertyPath: m_markerPrefabManager
+      value: 
+      objectReference: {fileID: 1672552461}
+    - target: {fileID: 7042133912099342453, guid: 946c4bcf5ee78c2438bd71dd2f9fe1f9, type: 3}
       propertyPath: m_webCamTextureManager
       value: 
       objectReference: {fileID: 1373946501}
@@ -1757,3 +1812,4 @@ SceneRoots:
   - {fileID: 91842641}
   - {fileID: 1884619606}
   - {fileID: 66894736}
+  - {fileID: 1672552462}
