@@ -29,7 +29,8 @@ public class SoundMatchResult
 
 public class SoundObjectMatcher : MonoBehaviour
 {
-    [SerializeField] public int sight = 50; // 시야 각도 설정 +-sight
+    [Tooltip("소리가 시야 내에 있다고 판단하는 DoA(소리 방향)의 최대 각도(절댓값). 이 값을 기준으로 DoA를 카메라 시야각에 매핑합니다.")]
+    [SerializeField] public int sight = 60; // 시야 각도 설정 +-sight
 
     /// ["소리에서 인식된 라벨", "객체 인식된 라벨"]
     private readonly Dictionary<string, string> _soundObjectMap = new()
