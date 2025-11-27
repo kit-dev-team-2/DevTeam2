@@ -915,7 +915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15a60c30ee514474da872e316889e500, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hostIP: 10.71.82.59
+  hostIP: 192.168.0.40
   portNum: 8080
   ack_duration: 5000
 --- !u!1 &1140149730

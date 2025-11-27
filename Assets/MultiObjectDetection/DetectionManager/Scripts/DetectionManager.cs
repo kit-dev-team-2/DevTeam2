@@ -18,6 +18,10 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [Header("Controls configuration")]
         [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;  // A 버튼
 
+        [Header("Matching configuration")]
+        [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다. 이 각도보다 차이가 크면 매칭되지 않습니다.")]
+        [SerializeField] private float m_matchingAngleThreshold = 30.0f; // 소리와 객체 방향의 최대 허용 각도
+
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
 
@@ -131,22 +135,44 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             var count = 0;
             // SoundObjectMatcher를 사용해 현재 소리와 매칭되는 객체 목록을 가져옵니다.
             var allDetectedObjects = m_uiInference.BoxDrawn;
-            var matchedObjects = m_soundObjectMatcher.GetMatchedObjects(allDetectedObjects);
+            var matchResult = m_soundObjectMatcher.GetMatchedObjects(allDetectedObjects);
 
-            // 매칭된 객체가 있을 경우에만 기존 마커를 지우고 새로 그립니다.
-            if (matchedObjects.Count > 0)
+            // 새로운 소리가 감지되었을 경우(성공/실패 무관) 기존 마커를 모두 지웁니다.
+            if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
             {
                 ClearAllMarkers();
             }
 
-            // 매칭된 객체들에 대해서만 마커를 생성합니다.
-            foreach (var box in matchedObjects)
+            // MatchFound인 경우 마커 생성 로직
+            if (matchResult.ResultType == SoundMatchResultType.MatchFound)
             {
-                if (PlaceMarkerUsingEnvironmentRaycast(box.WorldPos, box.ClassName))
+                // DoA 각도와 가장 일치하는 위치의 객체를 찾습니다.
+                // out 키워드를 사용하여 bestMatchedObject를 전달하고, 성공 여부를 bool로 받습니다.
+                if (FindBestObjectForDoa(matchResult, out var bestMatchedObject))
+                {
+                    // 최종 선택된 하나의 객체에만 마커를 생성합니다.
+                    if (PlaceMarkerUsingEnvironmentRaycast(bestMatchedObject.WorldPos, matchResult.SoundLabel))
+                    {
+                        count++;
+                    }
+                }
+            }
+            // NoObjectInView인 경우, DoA 방향에 마커를 생성
+            else if (matchResult.ResultType == SoundMatchResultType.NoObjectInView)
+            {
+                // 1. DoA를 3D 공간의 방향 벡터로 변환합니다.
+                Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
+                // 2. 카메라 위치에서 해당 방향으로 2미터 앞에 위치를 지정합니다.
+                var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
+                Vector3 markerPosition = camera.position + soundDirection * 2.0f;
+
+                // Raycast 없이 지정된 위치에 마커를 생성합니다.
+                if (PlaceMarkerAtPosition(markerPosition, matchResult.SoundLabel))
                 {
                     count++;
                 }
             }
+
             if (count > 0)
             {
                 // Play sound if a new marker is placed.
@@ -156,7 +182,65 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         }
 
         /// <summary>
+        /// DoA 값과 가장 가까운 화면상 위치의 객체를 찾습니다.
+        /// </summary>
+        private bool FindBestObjectForDoa(SoundMatchResult matchResult, out SentisInferenceUiManager.BoundingBox bestObject)
+        {
+            float minDifference = float.MaxValue;
+            bestObject = default; // bestObject를 기본값으로 초기화
+
+            // 1. DoA를 3D 공간의 방향 벡터로 변환합니다.
+            Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
+
+            var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
+
+            // 2. 모든 매칭된 객체 중에서, 소리 방향과 가장 가까운 방향에 있는 객체를 찾습니다.
+            foreach (var obj in matchResult.MatchedObjects)
+            {
+                if (!obj.WorldPos.HasValue) continue; // 객체의 3D 위치가 없으면 건너뜁니다.
+
+                // 카메라 위치에서 객체를 바라보는 방향 벡터를 계산합니다.
+                Vector3 objectDirection = (obj.WorldPos.Value - camera.position).normalized;
+
+                // 소리 방향 벡터와 객체 방향 벡터 사이의 각도 차이를 계산합니다.
+                float difference = Vector3.Angle(soundDirection, objectDirection);
+
+                if (difference < minDifference)
+                {
+                    minDifference = difference;
+                    bestObject = obj;
+                }
+            }
+
+            // 찾은 최소 각도 차이가 설정한 임계값보다 작거나 같을 때만 성공으로 간주합니다.
+            bool success = minDifference <= m_matchingAngleThreshold;
+            if (!success) { Debug.Log($"[DetectionManager] Best match found, but angle difference ({minDifference}°) exceeds threshold ({m_matchingAngleThreshold}°). No match."); }
+            return success;
+        }
+
+        /// <summary>
+        /// DoA 각도를 3D 공간의 방향 벡터로 변환합니다.
+        /// </summary>
+        private Vector3 GetDirectionFromDoa(int doa)
+        {
+            var centerEye = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
+            int sight = m_soundObjectMatcher.sight;
+
+            // 1. DoA 각도를 -sight ~ +sight 범위로 정규화합니다. (예: 310도 -> -50도)
+            float normalizedDoa = (doa > 180) ? doa - 360 : doa;
+
+            // 2. 정규화된 DoA를 실제 시야각에 비례하는 각도로 변환합니다.
+            //    (예: -50도 -> -25도, +50도 -> +25도, 만약 실제 시야각이 50도라면)
+            float targetAngle = (normalizedDoa / sight) * (centerEye.GetComponent<Camera>().fieldOfView / 2.0f);
+
+            // 3. 카메라의 정면 방향을 기준으로 계산된 targetAngle만큼 Y축 회전시켜 최종 방향을 계산합니다.
+            Vector3 direction = Quaternion.AngleAxis(targetAngle, Vector3.up) * centerEye.forward;
+            return direction;
+        }
+
+        /// <summary>
         /// Place a marker using the environment raycast
+        /// 지정된 위치에 마커를 생성 -> 물체 위에 생성
         /// </summary>
         private bool PlaceMarkerUsingEnvironmentRaycast(Vector3? position, string className)
         {
@@ -191,6 +275,41 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 // Update marker transform with the real world transform
                 eMarker.transform.SetPositionAndRotation(position.Value, Quaternion.identity);
                 eMarker.GetComponent<DetectionSpawnMarkerAnim>().SetYoloClassName(className);
+            }
+
+            return !existMarker;
+        }
+
+        /// <summary>
+        /// 지정된 위치에 마커를 생성합니다. (Raycast 없이)
+        /// </summary>
+        private bool PlaceMarkerAtPosition(Vector3 position, string label)
+        {
+            // Check if you spanwed the same object before
+            var existMarker = false;
+            foreach (var e in m_spwanedEntities)
+            {
+                var markerClass = e.GetComponent<DetectionSpawnMarkerAnim>();
+                if (markerClass)
+                {
+                    var dist = Vector3.Distance(e.transform.position, position);
+                    if (dist < m_spawnDistance && markerClass.GetYoloClassName() == label)
+                    {
+                        existMarker = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!existMarker)
+            {
+                // spawn a visual marker
+                var eMarker = Instantiate(m_spwanMarker);
+                m_spwanedEntities.Add(eMarker);
+
+                // Update marker transform with the calculated position
+                eMarker.transform.SetPositionAndRotation(position, Quaternion.identity);
+                eMarker.GetComponent<DetectionSpawnMarkerAnim>().SetYoloClassName(label);
             }
 
             return !existMarker;
