@@ -16,17 +16,17 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private PassthroughCameraAccess m_cameraAccess;
 
         [Header("Controls configuration")]
-        [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;  // A 버튼
+        [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;
 
         [Header("Matching configuration")]
         [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다. 이 각도보다 차이가 크면 매칭되지 않습니다.")]
-        [SerializeField] private float m_matchingAngleThreshold = 30.0f; // 소리와 객체 방향의 최대 허용 각도
+        [SerializeField, Range(0, 90)] private float m_matchingAngleThreshold = 30.0f;
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
 
         [Header("Placement configureation")]
-        [SerializeField] private GameObject m_spwanMarker;  // 3D 마커 프리팹
+        [SerializeField] private MarkerPrefabManager m_markerPrefabManager; // 이모지 프리팹 매니저
         [SerializeField] private EnvironmentRayCastSampleManager m_environmentRaycast;
         [SerializeField] private float m_spawnDistance = 0.25f; // 최소 거리
         [SerializeField] private AudioSource m_placeSound;
@@ -35,8 +35,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private SentisInferenceRunManager m_runInference;
         [SerializeField] private SentisInferenceUiManager m_uiInference;
         [Space(10)]
-        // SoundObjectMatcher 클래스에 대한 참조를 추가합니다.
-        [SerializeField] private SoundObjectMatcher m_soundObjectMatcher;
+        [SerializeField] private SoundObjectMatcher m_soundObjectMatcher;   // 사운드-객체 매칭 매니저
         [Space(10)]
         public UnityEvent<int> OnObjectsIdentified;
 
@@ -137,18 +136,20 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             var allDetectedObjects = m_uiInference.BoxDrawn;
             var matchResult = m_soundObjectMatcher.GetMatchedObjects(allDetectedObjects);
 
+            // DoA를 3D 공간의 방향 벡터로 변환
+            Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
+
             // 새로운 소리가 감지되었을 경우(성공/실패 무관) 기존 마커를 모두 지웁니다.
             if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
             {
                 ClearAllMarkers();
             }
 
-            // MatchFound인 경우 마커 생성 로직
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)
             {
                 // DoA 각도와 가장 일치하는 위치의 객체를 찾습니다.
                 // out 키워드를 사용하여 bestMatchedObject를 전달하고, 성공 여부를 bool로 받습니다.
-                if (FindBestObjectForDoa(matchResult, out var bestMatchedObject))
+                if (FindBestObjectForDoa(soundDirection, matchResult, out var bestMatchedObject))
                 {
                     // 최종 선택된 하나의 객체에만 마커를 생성합니다.
                     if (PlaceMarkerUsingEnvironmentRaycast(bestMatchedObject.WorldPos, matchResult.SoundLabel))
@@ -160,13 +161,11 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // NoObjectInView인 경우, DoA 방향에 마커를 생성
             else if (matchResult.ResultType == SoundMatchResultType.NoObjectInView)
             {
-                // 1. DoA를 3D 공간의 방향 벡터로 변환합니다.
-                Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
-                // 2. 카메라 위치에서 해당 방향으로 2미터 앞에 위치를 지정합니다.
+                // 마커 위치 설정
                 var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
-                Vector3 markerPosition = camera.position + soundDirection * 2.0f;
+                Vector3 markerPosition = camera.position + soundDirection * 0.5f; // 0.5미터 앞에 생성
 
-                // Raycast 없이 지정된 위치에 마커를 생성합니다.
+                // Raycast 없이 마커 생성
                 if (PlaceMarkerAtPosition(markerPosition, matchResult.SoundLabel))
                 {
                     count++;
@@ -182,19 +181,16 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         }
 
         /// <summary>
-        /// DoA 값과 가장 가까운 화면상 위치의 객체를 찾습니다.
+        /// DOA 값과 가장 가까운 화면상 위치의 객체를 찾습니다.
         /// </summary>
-        private bool FindBestObjectForDoa(SoundMatchResult matchResult, out SentisInferenceUiManager.BoundingBox bestObject)
+        private bool FindBestObjectForDoa(Vector3 soundDirection, SoundMatchResult matchResult, out SentisInferenceUiManager.BoundingBox bestObject)
         {
             float minDifference = float.MaxValue;
             bestObject = default; // bestObject를 기본값으로 초기화
 
-            // 1. DoA를 3D 공간의 방향 벡터로 변환합니다.
-            Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
-
             var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
 
-            // 2. 모든 매칭된 객체 중에서, 소리 방향과 가장 가까운 방향에 있는 객체를 찾습니다.
+            // 모든 매칭된 객체 중에서, 소리 방향과 가장 가까운 방향에 있는 객체를 찾습니다.
             foreach (var obj in matchResult.MatchedObjects)
             {
                 if (!obj.WorldPos.HasValue) continue; // 객체의 3D 위치가 없으면 건너뜁니다.
@@ -212,14 +208,14 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 }
             }
 
-            // 찾은 최소 각도 차이가 설정한 임계값보다 작거나 같을 때만 성공으로 간주합니다.
+            // 찾은 최소 각도 차이가 설정한 임계값보다 작거나 같을 때만 성공
             bool success = minDifference <= m_matchingAngleThreshold;
             if (!success) { Debug.Log($"[DetectionManager] Best match found, but angle difference ({minDifference}°) exceeds threshold ({m_matchingAngleThreshold}°). No match."); }
             return success;
         }
 
         /// <summary>
-        /// DoA 각도를 3D 공간의 방향 벡터로 변환합니다.
+        /// DOA 각도를 3D 공간의 방향 벡터로 변환
         /// </summary>
         private Vector3 GetDirectionFromDoa(int doa)
         {
@@ -254,11 +250,18 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             var existMarker = false;
             foreach (var e in m_spwanedEntities)
             {
-                var markerClass = e.GetComponent<DetectionSpawnMarkerAnim>();
-                if (markerClass)
+                // 두 종류의 마커를 모두 확인합니다.
+                var defaultMarker = e.GetComponent<DetectionSpawnMarkerAnim>();
+                var emojiMarker = e.GetComponent<EmojiMarker>();
+
+                string markerLabel = "";
+                if (defaultMarker != null) markerLabel = defaultMarker.GetYoloClassName();
+                else if (emojiMarker != null) markerLabel = emojiMarker.GetSoundLabel();
+
+                if (!string.IsNullOrEmpty(markerLabel))
                 {
                     var dist = Vector3.Distance(e.transform.position, position.Value);
-                    if (dist < m_spawnDistance && markerClass.GetYoloClassName() == className)
+                    if (dist < m_spawnDistance && markerLabel == className)
                     {
                         existMarker = true;
                         break;
@@ -269,12 +272,18 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             if (!existMarker)
             {
                 // spawn a visual marker
-                var eMarker = Instantiate(m_spwanMarker);
+                GameObject prefabToSpawn = m_markerPrefabManager.GetPrefabForSoundLabel(className);
+                var eMarker = Instantiate(prefabToSpawn);
                 m_spwanedEntities.Add(eMarker);
 
                 // Update marker transform with the real world transform
                 eMarker.transform.SetPositionAndRotation(position.Value, Quaternion.identity);
-                eMarker.GetComponent<DetectionSpawnMarkerAnim>().SetYoloClassName(className);
+
+                // 두 종류의 마커에 모두 이름을 설정합니다.
+                var defaultMarkerToSet = eMarker.GetComponent<DetectionSpawnMarkerAnim>();
+                var emojiMarkerToSet = eMarker.GetComponent<EmojiMarker>();
+                if (defaultMarkerToSet != null) defaultMarkerToSet.SetYoloClassName(className);
+                else if (emojiMarkerToSet != null) emojiMarkerToSet.SetSoundLabel(className);
             }
 
             return !existMarker;
@@ -289,11 +298,18 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             var existMarker = false;
             foreach (var e in m_spwanedEntities)
             {
-                var markerClass = e.GetComponent<DetectionSpawnMarkerAnim>();
-                if (markerClass)
+                // 두 종류의 마커를 모두 확인합니다.
+                var defaultMarker = e.GetComponent<DetectionSpawnMarkerAnim>();
+                var emojiMarker = e.GetComponent<EmojiMarker>();
+
+                string markerLabel = "";
+                if (defaultMarker != null) markerLabel = defaultMarker.GetYoloClassName();
+                else if (emojiMarker != null) markerLabel = emojiMarker.GetSoundLabel();
+
+                if (!string.IsNullOrEmpty(markerLabel))
                 {
                     var dist = Vector3.Distance(e.transform.position, position);
-                    if (dist < m_spawnDistance && markerClass.GetYoloClassName() == label)
+                    if (dist < m_spawnDistance && markerLabel == label)
                     {
                         existMarker = true;
                         break;
@@ -304,12 +320,18 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             if (!existMarker)
             {
                 // spawn a visual marker
-                var eMarker = Instantiate(m_spwanMarker);
+                GameObject prefabToSpawn = m_markerPrefabManager.GetPrefabForSoundLabel(label);
+                var eMarker = Instantiate(prefabToSpawn);
                 m_spwanedEntities.Add(eMarker);
 
                 // Update marker transform with the calculated position
                 eMarker.transform.SetPositionAndRotation(position, Quaternion.identity);
-                eMarker.GetComponent<DetectionSpawnMarkerAnim>().SetYoloClassName(label);
+
+                // 두 종류의 마커에 모두 이름을 설정합니다.
+                var defaultMarkerToSet = eMarker.GetComponent<DetectionSpawnMarkerAnim>();
+                var emojiMarkerToSet = eMarker.GetComponent<EmojiMarker>();
+                if (defaultMarkerToSet != null) defaultMarkerToSet.SetYoloClassName(label);
+                else if (emojiMarkerToSet != null) emojiMarkerToSet.SetSoundLabel(label);
             }
 
             return !existMarker;
