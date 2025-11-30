@@ -24,6 +24,13 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
+        [Tooltip("시야 밖 소리 경고 UI: 왼쪽")]
+        [SerializeField] private GameObject m_outOfViewBorderLeft;
+        [Tooltip("시야 밖 소리 경고 UI: 아래쪽")]
+        [SerializeField] private GameObject m_outOfViewBorderBottom;
+        [Tooltip("시야 밖 소리 경고 UI: 오른쪽")]
+        [SerializeField] private GameObject m_outOfViewBorderRight;
+
 
         [Header("Placement configureation")]
         [SerializeField] private MarkerPrefabManager m_markerPrefabManager; // 이모지 프리팹 매니저
@@ -143,6 +150,10 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
             {
                 ClearAllMarkers();
+                // 새로운 소리가 감지되면 모든 경고 테두리를 비활성화합니다.
+                if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
+                if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
+                if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
             }
 
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)
@@ -169,6 +180,27 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 if (PlaceMarkerAtPosition(markerPosition, matchResult.SoundLabel))
                 {
                     count++;
+                }
+            }
+            // OutOfView 인 경우 화면 경고 표시
+            else if (matchResult.ResultType == SoundMatchResultType.OutOfView)
+            {
+                int doa = matchResult.Doa;
+                // DoA 값에 따라 방향을 결정하고 해당 테두리를 활성화합니다.
+                // 남동 (sight < doa <= 150) -> 오른쪽 테두리
+                if (doa > m_soundObjectMatcher.sight && doa <= 150)
+                {
+                    m_outOfViewBorderRight.SetActive(true);
+                }
+                // 남서 (210 <= doa < 360 - sight) -> 왼쪽 테두리
+                else if (doa >= 210 && doa < 360 - m_soundObjectMatcher.sight)
+                {
+                    m_outOfViewBorderLeft.SetActive(true);
+                }
+                // 남 (150 < doa < 210) -> 아래쪽 테두리
+                else
+                {
+                    m_outOfViewBorderBottom.SetActive(true);
                 }
             }
 
