@@ -1453,6 +1453,14 @@ MonoBehaviour:
     prefab: {fileID: 8166255855613256730, guid: 008f894caa394470783b5673109ca1f7, type: 3}
   - soundLabel: Bark
     prefab: {fileID: 8166255855613256730, guid: 008f894caa394470783b5673109ca1f7, type: 3}
+  - soundLabel: Speech
+    prefab: {fileID: 8166255855613256730, guid: d65cd621b1e294a5e8a2a6716180cbfa, type: 3}
+  - soundLabel: Vehicle
+    prefab: {fileID: 8166255855613256730, guid: d43e867157b4c439eb11a29f49ec7c08, type: 3}
+  - soundLabel: Vehicle Horn
+    prefab: {fileID: 8166255855613256730, guid: ea5307ba7f1b1465ea42c7734757d397, type: 3}
+  - soundLabel: Siren
+    prefab: {fileID: 8166255855613256730, guid: 3c04df62140df4a0d946c2ec6d550c80, type: 3}
 --- !u!4 &1672552462
 Transform:
   m_ObjectHideFlags: 0
