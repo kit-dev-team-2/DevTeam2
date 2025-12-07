@@ -31,16 +31,25 @@ public class SoundObjectMatcher : MonoBehaviour
 {
     [SerializeField] public int sight = 50; // 시야 각도 설정 +-sight
 
-    /// ["소리에서 인식된 라벨", "객체 인식된 라벨"]
-    private readonly Dictionary<string, string> _soundObjectMap = new()
+    /// ["소리 레이블", "객체 레이블"]
+    private readonly Dictionary<string, List<string>> _soundObjectMap = new()
     {
-        { "Speech", "person" },
-        { "Bark", "dog"},
-        { "Dog", "dog" },
-        { "Vehicle horn", "car" },
-        { "Vehicle", "car" },
-        { "Siren", "car" },
+        { "Speech", new List<string> { "person" } },
+        { "Bark", new List<string> { "dog" } },
+        { "Dog", new List<string> { "dog" } },
+        { "Siren", new List<string> { "car" } },
+        { "Vehicle horn", new List<string> { "car", "bus", "truck", "motorbike" } },
+        { "Vehicle", new List<string> { "car", "bus", "truck", "motorbike" } },
     };
+
+    // OutOfView 경고 매칭용 셋 
+    private readonly HashSet<string> _warningSoundObjectMap = new()
+    {
+        "Bark", "Dog", "Vehicle horn", "Vehicle", "Siren", "Explosion"
+    };
+
+    private readonly List<SentisInferenceUiManager.BoundingBox> _reusableMatchedObjects = new();
+
     /// <summary>
     /// QuestWsClient에서 새로운 소리 데이터를 가져와, 그 소리와 매칭되는 객체를 찾아 결과를 반환합니다.
     /// </summary>
@@ -48,15 +57,15 @@ public class SoundObjectMatcher : MonoBehaviour
     /// <returns>소리 매칭 결과(SoundMatchResult)</returns>
     public SoundMatchResult GetMatchedObjects(List<SentisInferenceUiManager.BoundingBox> allDetectedObjects)
     {
-        // 1. QuestWsClient에서 최신 소리 데이터(SoundResultMessage)를 가져옵니다.
+        // QuestWsClient에서 최신 소리 데이터(SoundResultMessage)를 가져옵니다.
         var soundResult = QuestWsClient.Instance?.GetAndClearLatestSoundResult();
         if (soundResult == null || soundResult.tags == null || soundResult.tags.Length == 0)
         {
-            // 상태 0: 새로운 소리 없음
+            // 상태: 새로운 소리 없음
             return new SoundMatchResult(SoundMatchResultType.NoNewSound);
         }
 
-        // 2. 받은 데이터에서 최고 점수의 소리 레이블(bestLabel)을 찾습니다.
+        // 받은 데이터에서 최고 점수의 소리 레이블(bestLabel)을 찾습니다.
         float bestScore = -1f;
         string bestLabel = "";
         int doa = soundResult.doa;
@@ -68,33 +77,50 @@ public class SoundObjectMatcher : MonoBehaviour
                 bestLabel = tag.label;
             }
         }
-        Debug.Log($"[SoundObjectMatcher] Best sound detected: {bestLabel} ({bestScore:F3}) at DoA: {doa}");
 
-        // 3. 찾은 bestLabel과 매핑되는 객체 클래스 이름을 딕셔너리에서 찾습니다.
-        if (string.IsNullOrEmpty(bestLabel) || !_soundObjectMap.TryGetValue(bestLabel, out string targetClassName))
+        #region 시야 밖 처리
+        // DoA(소리 방향)가 시야 밖인지 확인
+        if (doa > sight && doa < 360 - sight)
         {
-            // 상태 1: 매칭 규칙 없음
+            // warningSoundObjectMap에 정의된 소리인지 확인
+            if (_warningSoundObjectMap.Contains(bestLabel))
+            {
+                // 상태: 시야 밖
+                return new SoundMatchResult(SoundMatchResultType.OutOfView, bestLabel, doa);
+            }
+            else
+            {
+                // 상태: 매칭 규칙 없음 (무시)
+                return new SoundMatchResult(SoundMatchResultType.NoMatchingRule, bestLabel, doa);
+            }
+        }
+        #endregion
+
+        #region 시야 내 처리
+        if (string.IsNullOrEmpty(bestLabel) || !_soundObjectMap.TryGetValue(bestLabel, out var targetClassNames))
+        {
+            // 상태: 매칭 규칙 없음 (무시)
             return new SoundMatchResult(SoundMatchResultType.NoMatchingRule, bestLabel, doa);
         }
 
-        // 4. DoA(소리 방향)가 시야 밖인 경우 먼저 처리합니다.
-        if (doa > sight && doa < 360 - sight)
+        // 시야 내에 타겟 클래스를 가진 객체가 있는지 확인
+        _reusableMatchedObjects.Clear();
+        foreach (var detectedObject in allDetectedObjects)
         {
-            Debug.Log($"[SoundObjectMatcher] Sound is out of view (DoA: {doa}).");
-            return new SoundMatchResult(SoundMatchResultType.OutOfView, bestLabel, doa);
+            if (targetClassNames.Contains(detectedObject.ClassName))
+            {
+                _reusableMatchedObjects.Add(detectedObject);
+            }
         }
 
-        // 5. 시야 내에 타겟 클래스를 가진 객체가 있는지 확인합니다.
-        var objectsInView = allDetectedObjects.Where(obj => obj.ClassName == targetClassName).ToList();
-        if (objectsInView.Count == 0)
+        if (_reusableMatchedObjects.Count == 0)
         {
-            // 상태 3: 시야 내에 매칭되는 객체 없음
-            Debug.Log($"[SoundObjectMatcher] Sound is in view, but no object of class '{targetClassName}' found.");
+            // 상태: 시야 내에 매칭되는 객체 없음
             return new SoundMatchResult(SoundMatchResultType.NoObjectInView, bestLabel, doa);
         }
 
-        // 6. 매칭 성공
-        Debug.Log($"[SoundObjectMatcher] Result: Match Found! Sound '{bestLabel}' matched with {objectsInView.Count} object(s) of class '{targetClassName}'.");
-        return new SoundMatchResult(SoundMatchResultType.MatchFound, bestLabel, doa, objectsInView);
+        // 상태: 매칭 성공
+        return new SoundMatchResult(SoundMatchResultType.MatchFound, bestLabel, doa, _reusableMatchedObjects);
+        #endregion
     }
 }

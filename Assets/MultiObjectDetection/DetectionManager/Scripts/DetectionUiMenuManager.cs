@@ -20,6 +20,10 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private GameObject m_noPermissionPanel;
         [SerializeField] private Text m_labelInformation;
         [SerializeField] private AudioSource m_buttonSound;
+        [SerializeField] private DetectionManager m_detectionManager;
+
+        [Tooltip("자동 시작까지 대기할 시간")]
+        [SerializeField] private float m_autoStartTime = 3.0f;
 
         public bool IsInputActive { get; set; } = false;
 
@@ -56,17 +60,17 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 yield return null;
             }
             OnInitialMenu();
+
+            // 3초 동안 실제 시간 기준으로 대기합니다.
+            yield return new WaitForSecondsRealtime(m_autoStartTime);
+
+            // 3초 후, 시작 메뉴를 숨기고 탐지를 시작합니다.
+            m_detectionManager.StartDetection();
+            OnPauseMenu(false);
         }
 
         private void Update()
         {
-            if (!IsInputActive)
-                return;
-
-            if (m_initialMenu)
-            {
-                InitialMenuUpdate();
-            }
         }
         #endregion
 
@@ -92,11 +96,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         private void InitialMenuUpdate()
         {
-            if (OVRInput.GetUp(m_actionButton))
-            {
-                m_buttonSound?.Play();
-                OnPauseMenu(false);
-            }
+            // 이 메서드는 더 이상 Update에서 호출되지 않습니다.
         }
 
         private void OnPauseMenu(bool visible)
