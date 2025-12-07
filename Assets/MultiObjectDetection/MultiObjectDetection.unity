@@ -307,6 +307,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ReturnToStartScene
       objectReference: {fileID: 0}
+    - target: {fileID: 2073883202203575103, guid: 6c8f51c0c4ebe4902a313954838e1de9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1956,8 +1960,8 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1784151354240486895, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Text
-      value: "-----------------------------------------------------------\n<b>\uAC1C\uBC1C
-        2\uD300 </b>\n-----------------------------------------------------------"
+      value: "-----------------------------------------------------------\n<b>\uCE74\uBA54\uB77C
+        \uAD8C\uD55C \uC5C6\uC74C </b>\n-----------------------------------------------------------"
       objectReference: {fileID: 0}
     - target: {fileID: 2279054344620247711, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Text
@@ -1965,7 +1969,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2447241005283040037, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Text
-      value: "\uD504\uB85C\uC81D\uD2B8: \uC18C\uB9AC \uC2DC\uAC01\uD654 "
+      value: "\u2630\uB97C \uB204\uB974\uBA74 \uC124\uC815\uC73C\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4"
+      objectReference: {fileID: 0}
+    - target: {fileID: 3553416250102928145, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_Text
+      value: "\uC7A0\uC2DC \uD6C4 \uC2DC\uC791\uB429\uB2C8\uB2E4 "
       objectReference: {fileID: 0}
     - target: {fileID: 4386550124580111073, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_IsActive
@@ -1973,8 +1981,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5185259287786992558, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Text
-      value: "-----------------------------------------------------------\n<b>\uAC1C\uBC1C
-        2 </b>\n-----------------------------------------------------------"
+      value: "-----------------------------------------------------------\n<b>\uB85C\uB529 
+        \uC911</b>\n-----------------------------------------------------------"
       objectReference: {fileID: 0}
     - target: {fileID: 5319885961176894441, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Text
@@ -1992,6 +2000,10 @@ PrefabInstance:
     - target: {fileID: 8722207748505512710, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Name
       value: DetectionUiMenuPrefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 8722207748505512710, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8722207748505512711, guid: 259c0c899b7e0c14aa431eefdc0aacc6, type: 3}
       propertyPath: m_Pivot.x

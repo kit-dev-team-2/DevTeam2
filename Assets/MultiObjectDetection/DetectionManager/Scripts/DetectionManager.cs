@@ -174,7 +174,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             {
                 // 마커 위치 설정
                 var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
-                Vector3 markerPosition = camera.position + soundDirection * 0.5f; // 0.5미터 앞에 생성
+                Vector3 markerPosition = camera.position + soundDirection * 0.25f; // 0.25미터 앞에 생성
 
                 // Raycast 없이 마커 생성
                 if (PlaceMarkerAtPosition(markerPosition, matchResult.SoundLabel))
