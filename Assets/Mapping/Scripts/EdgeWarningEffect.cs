@@ -7,13 +7,13 @@ namespace PassthroughCameraSamples.MultiObjectDetection
     public class EdgeWarningEffect : MonoBehaviour
     {
         [Tooltip("반짝이는 속도")]
-        [SerializeField] private float m_pulseSpeed = 2.0f;
+        [SerializeField] private float m_pulseSpeed = 10.0f;
         [Tooltip("최소 밝기 (알파값)")]
         [Range(0, 1)]
-        [SerializeField] private float m_minAlpha = 0.1f;
+        [SerializeField] private float m_minAlpha = 0.05f;
         [Tooltip("최대 밝기 (알파값)")]
         [Range(0, 1)]
-        [SerializeField] private float m_maxAlpha = 0.7f;
+        [SerializeField] private float m_maxAlpha = 0.5f;
 
         private Image m_image;
         private Color m_originalColor;
