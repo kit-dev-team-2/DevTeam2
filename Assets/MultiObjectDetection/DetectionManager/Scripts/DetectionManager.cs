@@ -49,7 +49,6 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         private bool m_isPaused = true;
         private List<GameObject> m_spwanedEntities = new();
         private bool m_isStarted = false;
-        private bool m_isSentisReady = false;
         private float m_delayPauseBackTime = 0;
 
         #region Unity Functions
@@ -59,26 +58,13 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         private IEnumerator Start()
         {
-            // Wait until Sentis model is loaded
-            var sentisInference = FindAnyObjectByType<SentisInferenceRunManager>();
-            while (!sentisInference.IsModelLoaded)
-            {
-                yield return null;
-            }
-            m_isSentisReady = true;
+            // 시작 로직은 이제 DetectionUiMenuManager가 제어합니다.
+            yield return null;
         }
 
         private void Update()
         {
-            if (!m_isStarted)
-            {
-                // Manage the Initial Ui Menu
-                if (m_cameraAccess.IsPlaying && m_isSentisReady)
-                {
-                    m_isStarted = true;
-                }
-            }
-            else
+            if (m_isStarted)
             {
                 // 매 프레임, 새로운 소리와 매칭되는 객체가 있는지 확인하고 마커를 생성합니다.
                 // (SoundObjectMatcher가 내부적으로 QuestWsClient를 확인합니다)
@@ -93,7 +79,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             }
 
             // Don't start Sentis inference if the app is paused or we don't have a camera image yet
-            if (m_isPaused || !m_cameraAccess.IsPlaying)
+            // 탐지가 시작된 후에만 일시정지를 확인하여, 초기 대기 중 Passthrough가 꺼지는 것을 방지합니다.
+            if ((m_isPaused && m_isStarted) || !m_cameraAccess.IsPlaying)
             {
                 if (m_isPaused)
                 {
@@ -377,6 +364,14 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         public void OnPause(bool pause)
         {
             m_isPaused = pause;
+        }
+
+        /// <summary>
+        /// DetectionUiMenuManager에 의해 호출되어 객체 탐지를 시작합니다.
+        /// </summary>
+        public void StartDetection()
+        {
+            m_isStarted = true;
         }
         #endregion
     }
