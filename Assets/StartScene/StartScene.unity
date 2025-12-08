@@ -904,7 +904,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1039142091
 Transform:
   m_ObjectHideFlags: 0
@@ -979,9 +979,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33962741a56c2a643ba07df6c6a1c133, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Overlay: {fileID: 343815009}
-  Text: {fileID: 207201471}
-  VrRig: {fileID: 946435675}
+  m_wsClient: {fileID: 1039142092}
 --- !u!1001 &1185634211
 PrefabInstance:
   m_ObjectHideFlags: 0

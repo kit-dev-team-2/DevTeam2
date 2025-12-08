@@ -12,7 +12,7 @@ public class QuestWsClient : MonoBehaviour
     private static QuestWsClient instance; // 이전 버전 호환성을 위해 유지
 
     [Header("WebSocket 서버 설정")]
-    [SerializeField] string hostIP = "192.168.0.121";   // 호스트(PC) 서버 IP 주소
+    public string hostIP = "192.168.0.121";   // 호스트(PC) 서버 IP 주소
     [SerializeField] string portNum = "8080";   // 서버 포트 번호
     string serverAddress => $"ws://{hostIP}:{portNum}"; // WebSocket 서버 주소
 
@@ -68,37 +68,6 @@ public class QuestWsClient : MonoBehaviour
     private SoundResultMessage _latestSoundResult = null;
 
     // ====== 설정 ======
-
-    async void Start()
-    {
-        Application.runInBackground = true;
-        ws = new ClientWebSocket();
-        cts = new CancellationTokenSource();
-
-        try
-        {
-            Debug.Log($"WS connecting: {serverAddress}");
-            await ws.ConnectAsync(new Uri(serverAddress), cts.Token);
-            Debug.Log("WS connected ✅");
-
-            // ✅ 연결 성공 직후 hello 전송
-            await SendJson(new HelloMsg
-            {
-                device = SystemInfo.deviceModel,
-                t = NowMs()
-            });
-
-            // ✅ 주기적인 ack 시작
-            _ = HeartbeatLoop();
-
-            // ✅ 수신 루프 시작
-            _ = ReceiveLoop();
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"WS connect fail ❌ : {e.Message}");
-        }
-    }
 
     // ====== 주기적인 ack 루프 ======
     async Task HeartbeatLoop()
@@ -241,21 +210,6 @@ public class QuestWsClient : MonoBehaviour
 
     long NowMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-    async void OnDestroy()
-    {
-        try
-        {
-            cts?.Cancel();
-            if (ws != null)
-            {
-                if (ws.State == WebSocketState.Open)
-                    await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", CancellationToken.None);
-                ws.Dispose();
-            }
-        }
-        catch { }
-    }
-
     void Awake()
     {
         // 싱글톤 + 씬 넘어가도 안 죽게
@@ -267,5 +221,74 @@ public class QuestWsClient : MonoBehaviour
         Instance = this;
         instance = this; // 이전 버전 호환성을 위해 유지
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        Application.runInBackground = true;
+    }
+
+    async void OnDestroy()
+    {
+        await CloseConnection();
+    }
+
+    /// <summary>
+    /// 지정된 IP 주소로 WebSocket 연결을 시작합니다.
+    /// </summary>
+    public async void ConnectWithIP(string ip)
+    {
+        // 이미 연결되어 있거나 연결 중이라면 먼저 기존 연결을 닫습니다.
+        await CloseConnection();
+
+        hostIP = ip; // 새로운 IP로 업데이트
+
+        ws = new ClientWebSocket();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            Debug.Log($"[QuestWsClient] Connecting to: {serverAddress}");
+            await ws.ConnectAsync(new Uri(serverAddress), cts.Token);
+            Debug.Log("[QuestWsClient] Connected ✅");
+
+            // 연결 성공 직후 hello 메시지 전송
+            await SendJson(new HelloMsg
+            {
+                device = SystemInfo.deviceModel,
+                t = NowMs()
+            });
+
+            // 주기적인 ack 및 수신 루프 시작
+            _ = HeartbeatLoop();
+            _ = ReceiveLoop();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[QuestWsClient] Connection failed ❌: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 현재 WebSocket 연결을 안전하게 닫습니다.
+    /// </summary>
+    public async Task CloseConnection()
+    {
+        cts?.Cancel();
+        if (ws != null && (ws.State == WebSocketState.Open || ws.State == WebSocketState.Connecting))
+        {
+            await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing connection", CancellationToken.None);
+        }
+        ws?.Dispose();
+        cts?.Dispose();
+    }
+
+    /// <summary>
+    /// WebSocket이 현재 연결되어 있는지 확인합니다.
+    /// </summary>
+    /// <returns>연결되어 있으면 true, 그렇지 않으면 false</returns>
+    public bool IsConnected()
+    {
+        return ws != null && ws.State == WebSocketState.Open;
     }
 }
