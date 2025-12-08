@@ -1,0 +1,93 @@
+// Copyright (c) Meta Platforms, Inc. and affiliates.
+// Original Source code from Oculus Starter Samples (https://github.com/oculus-samples/Unity-StarterSamples)
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Meta.XR.Samples;
+using UnityEngine;
+
+namespace PassthroughCameraSamples.StartScene
+{
+    // Create menu of all scenes included in the build.
+    [MetaCodeSample("PassthroughCameraApiSamples-StartScene")]
+    public class StartMenu : MonoBehaviour
+    {
+        public OVROverlay Overlay;
+        public OVROverlay Text;
+        public OVRCameraRig VrRig;
+
+        private void Start()
+        {
+            var generalScenes = new List<Tuple<int, string>>();
+            var passthroughScenes = new List<Tuple<int, string>>();
+            var proControllerScenes = new List<Tuple<int, string>>();
+
+            var n = UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;
+            for (var sceneIndex = 1; sceneIndex < n; ++sceneIndex)
+            {
+                var path = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(sceneIndex);
+
+                if (path.Contains("Passthrough"))
+                {
+                    passthroughScenes.Add(new Tuple<int, string>(sceneIndex, path));
+                }
+                else if (path.Contains("TouchPro"))
+                {
+                    proControllerScenes.Add(new Tuple<int, string>(sceneIndex, path));
+                }
+                else
+                {
+                    generalScenes.Add(new Tuple<int, string>(sceneIndex, path));    // MutiObjectDetection 씬도 여기에 포함됨
+                }
+            }
+
+            var uiBuilder = DebugUIBuilder.Instance;
+            if (passthroughScenes.Count > 0)
+            {
+                _ = uiBuilder.AddLabel("Passthrough Sample Scenes", DebugUIBuilder.DEBUG_PANE_LEFT);
+                foreach (var scene in passthroughScenes)
+                {
+                    _ = uiBuilder.AddButton(Path.GetFileNameWithoutExtension(scene.Item2), () => LoadScene(scene.Item1), -1, DebugUIBuilder.DEBUG_PANE_LEFT);
+                }
+            }
+
+            if (proControllerScenes.Count > 0)
+            {
+                _ = uiBuilder.AddLabel("Pro Controller Sample Scenes", DebugUIBuilder.DEBUG_PANE_RIGHT);
+                foreach (var scene in proControllerScenes)
+                {
+                    _ = uiBuilder.AddButton(Path.GetFileNameWithoutExtension(scene.Item2), () => LoadScene(scene.Item1), -1, DebugUIBuilder.DEBUG_PANE_RIGHT);
+                }
+            }
+
+            // general 씬들 선택하는 패널 (MultiobjectDetection 씬 포함)
+            _ = uiBuilder.AddLabel("Press ☰ at any time to return to scene selection", DebugUIBuilder.DEBUG_PANE_CENTER);
+            if (generalScenes.Count > 0)
+            {
+                _ = uiBuilder.AddDivider(DebugUIBuilder.DEBUG_PANE_CENTER);
+                _ = uiBuilder.AddLabel("개발 2팀", DebugUIBuilder.DEBUG_PANE_CENTER);
+                foreach (var scene in generalScenes)
+                {
+                    string sceneName = Path.GetFileNameWithoutExtension(scene.Item2);
+
+                    // MutiobjectDetection 씬 이름 변경
+                    if (sceneName == "MultiObjectDetection")
+                    {
+                        sceneName = "실행"; // 원하는 이름으로 변경
+                    }
+                    _ = uiBuilder.AddButton(sceneName, () => LoadScene(scene.Item1), -1, DebugUIBuilder.DEBUG_PANE_CENTER);
+                }
+            }
+
+            uiBuilder.Show();
+        }
+
+        private void LoadScene(int idx)
+        {
+            DebugUIBuilder.Instance.Hide();
+            Debug.Log("Load scene: " + idx);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
+        }
+    }
+}
