@@ -10,6 +10,7 @@ public class SettingsManager : MonoBehaviour
 
     private void Awake()
     {
+        // 싱글톤 보장
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -17,7 +18,7 @@ public class SettingsManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        DontDestroyOnLoad(gameObject);   // 여러 씬 쓸 거면 유지
 
         Load();
     }
@@ -28,14 +29,14 @@ public class SettingsManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(json))
         {
-            Current = new AppSettings(); // 기본값
+            Current = new AppSettings();  // 무조건 기본값 생성
         }
         else
         {
             Current = JsonUtility.FromJson<AppSettings>(json);
             if (Current == null)
             {
-                Current = new AppSettings();
+                Current = new AppSettings();  // 파싱 실패해도 null 방지
             }
         }
     }

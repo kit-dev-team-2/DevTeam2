@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MultiObjectDetection/MultiObjectDetection.unity
     guid: 20c230cce46443841b5727b1d6100bfc
-  - enabled: 1
+  - enabled: 0
     path: Assets/Setting/SettingScene.unity
     guid: 1b18c66037cc3df44925fc757d430591
   m_configObjects:
