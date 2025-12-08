@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Collections;
 using Meta.XR.Samples;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ namespace PassthroughCameraSamples.StartScene
         public OVROverlay Overlay;
         public OVROverlay Text;
         public OVRCameraRig VrRig;
+        private OVRScreenFade _screenFade;
 
         private void Start()
         {
@@ -62,11 +64,11 @@ namespace PassthroughCameraSamples.StartScene
             }
 
             // general 씬들 선택하는 패널 (MultiobjectDetection 씬 포함)
-            _ = uiBuilder.AddLabel("Press ☰ at any time to return to scene selection", DebugUIBuilder.DEBUG_PANE_CENTER);
+            _ = uiBuilder.AddLabel("개발 2팀", DebugUIBuilder.DEBUG_PANE_CENTER);
             if (generalScenes.Count > 0)
             {
                 _ = uiBuilder.AddDivider(DebugUIBuilder.DEBUG_PANE_CENTER);
-                _ = uiBuilder.AddLabel("개발 2팀", DebugUIBuilder.DEBUG_PANE_CENTER);
+                _ = uiBuilder.AddLabel("소리의 시각화", DebugUIBuilder.DEBUG_PANE_CENTER);
                 foreach (var scene in generalScenes)
                 {
                     string sceneName = Path.GetFileNameWithoutExtension(scene.Item2);
@@ -81,12 +83,23 @@ namespace PassthroughCameraSamples.StartScene
             }
 
             uiBuilder.Show();
+            _screenFade = FindFirstObjectByType<OVRScreenFade>();
         }
 
         private void LoadScene(int idx)
         {
             DebugUIBuilder.Instance.Hide();
             Debug.Log("Load scene: " + idx);
+            StartCoroutine(FadeAndLoadScene(idx));
+        }
+
+        private IEnumerator FadeAndLoadScene(int idx)
+        {
+            if (_screenFade != null)
+            {
+                _screenFade.FadeOut();
+                yield return new WaitForSeconds(_screenFade.fadeTime);
+            }
             UnityEngine.SceneManagement.SceneManager.LoadScene(idx);
         }
     }
