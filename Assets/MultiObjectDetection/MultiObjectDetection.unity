@@ -814,18 +814,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 007c5bbb137e14ed9aee5f8660c349f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingsPanel: {fileID: 0}
-  settingsButton: {fileID: 0}
-  emojiScaleSlider: {fileID: 0}
-  emojiScaleValueText: {fileID: 0}
-  emojiAlphaSlider: {fileID: 0}
-  emojiAlphaValueText: {fileID: 0}
-  confThreshSlider: {fileID: 0}
-  confThreshValueText: {fileID: 0}
-  detectDurationSlider: {fileID: 0}
-  detectDurationValueText: {fileID: 0}
-  preBufferDurationSlider: {fileID: 0}
-  preBufferDurationValueText: {fileID: 0}
+  settingsPanel: {fileID: 300557439}
+  emojiScaleSlider: {fileID: 1295206977}
+  emojiScaleValueText: {fileID: 328960606}
+  emojiAlphaSlider: {fileID: 1011975767}
+  emojiAlphaValueText: {fileID: 1276158859}
+  confThreshSlider: {fileID: 1294612111}
+  confThreshValueText: {fileID: 568136646}
+  detectDurationSlider: {fileID: 513850800}
+  detectDurationValueText: {fileID: 424655929}
+  preBufferDurationSlider: {fileID: 459556182}
+  preBufferDurationValueText: {fileID: 1858301607}
 --- !u!114 &300557442
 MonoBehaviour:
   m_ObjectHideFlags: 0

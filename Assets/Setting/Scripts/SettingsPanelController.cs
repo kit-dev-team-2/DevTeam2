@@ -5,7 +5,6 @@ public class SettingsPanelController : MonoBehaviour
 {
     [Header("Root")]
     public GameObject settingsPanel;    // SettingsPanel만 참조 (없으면 gameObject 써도 됨)
-    public GameObject settingsButton;     // SettingsButton
 
     [Header("Emoji Settings")]
     public Slider emojiScaleSlider;
@@ -123,12 +122,16 @@ public class SettingsPanelController : MonoBehaviour
 
     private void Close()
     {
-        // 자기 자신만 끄면 됨
+        // 패널 끄기
         var panel = settingsPanel != null ? settingsPanel : gameObject;
         panel.SetActive(false);
 
-        // Setting 버튼 다시 켜기
-        if (settingsButton != null)
-            settingsButton.SetActive(true);
+        // OpenSettings 쪽 상태/포인터/Detection도 false로 동기화
+        var openSettings = FindObjectOfType<OpenSettings>();
+        if (openSettings != null)
+        {
+            openSettings.OnPanelToggled(false);
+        }
+
     }
 }
