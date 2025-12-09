@@ -24,7 +24,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         {
             string displaySoundLabel = _soundObjectMap[soundLabel];
 
-            _warningText.text = $"{direction}에서 {displaySoundLabel} 소리가 들리는 것 같습니다.\n 주위를 살펴보세요!";
+            _warningText.text = $"{displaySoundLabel} 소리가\n 들리는 것 같습니다.\n 주위를 살펴보세요!";
         }
     }
 }
