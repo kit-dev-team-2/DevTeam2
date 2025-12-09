@@ -31,6 +31,13 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [Tooltip("시야 밖 소리 경고 UI: 오른쪽")]
         [SerializeField] private GameObject m_outOfViewBorderRight;
 
+        [Tooltip("경고 메시지 UI: 왼쪽")]
+        [SerializeField] private GameObject m_NoObjectInViewMsgLeft;
+        [Tooltip("경고 메시지 UI: 아래쪽")]
+        [SerializeField] private GameObject m_NoObjectInViewMsgBottom;
+        [Tooltip("경고 메시지 UI: 오른쪽")]
+        [SerializeField] private GameObject m_NoObjectInViewMsgRight;
+
 
         [Header("Placement configureation")]
         [SerializeField] private MarkerPrefabManager m_markerPrefabManager; // 이모지 프리팹 매니저
@@ -58,42 +65,39 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         private IEnumerator Start()
         {
+            // if (m_NoObjectInViewMsgBottom) m_NoObjectInViewMsgBottom.SetActive(true);
             // 시작 로직은 이제 DetectionUiMenuManager가 제어합니다.
             yield return null;
         }
 
         private void Update()
         {
-            if (m_isStarted)
+            // Passthrough 카메라가 준비되지 않았다면 아무것도 하지 않고 화면을 계속 렌더링합니다.
+            if (!m_cameraAccess.IsPlaying)
             {
-                // 매 프레임, 새로운 소리와 매칭되는 객체가 있는지 확인하고 마커를 생성합니다.
-                // (SoundObjectMatcher가 내부적으로 QuestWsClient를 확인합니다)
-                SpawnMarkersForMatchedObjects();
-
-                // Cooldown for the A button after return from the pause menu
-                m_delayPauseBackTime -= Time.deltaTime;
-                if (m_delayPauseBackTime <= 0)
-                {
-                    m_delayPauseBackTime = 0;
-                }
+                return;
             }
 
-            // Don't start Sentis inference if the app is paused or we don't have a camera image yet
-            // 탐지가 시작된 후에만 일시정지를 확인하여, 초기 대기 중 Passthrough가 꺼지는 것을 방지합니다.
-            if ((m_isPaused && m_isStarted) || !m_cameraAccess.IsPlaying)
+            // Passthrough 카메라 렌더링을 최우선으로 실행합니다.
+            // 이렇게 하면 일시정지 상태에서도 배경 화면이 꺼지지 않습니다.
+            if (!m_runInference.IsRunning())
             {
-                if (m_isPaused)
+                m_runInference.RunInference(m_cameraAccess);
+            }
+
+            // 탐지가 시작되었고, 앱이 일시정지 상태가 아닐 때만 탐지 로직을 실행합니다.
+            if (m_isStarted)
+            {
+                if (!m_isPaused)
+                {
+                    // 매 프레임, 새로운 소리와 매칭되는 객체가 있는지 확인하고 마커를 생성합니다.
+                    SpawnMarkersForMatchedObjects();
+                }
+                else
                 {
                     // Set the delay time for the A button to return from the pause menu
                     m_delayPauseBackTime = 0.1f;
                 }
-                return;
-            }
-
-            // Run a new inference when the current inference finishes
-            if (!m_runInference.IsRunning())
-            {
-                m_runInference.RunInference(m_cameraAccess);
             }
         }
         #endregion
@@ -141,6 +145,11 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
                 if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
                 if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
+                // 시야 내 경고 메시지 비활성화
+                if (m_NoObjectInViewMsgLeft) m_NoObjectInViewMsgLeft.SetActive(false);
+                if (m_NoObjectInViewMsgBottom) m_NoObjectInViewMsgBottom.SetActive(false);
+                if (m_NoObjectInViewMsgRight) m_NoObjectInViewMsgRight.SetActive(false);
+
             }
 
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)
@@ -156,17 +165,32 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                     }
                 }
             }
-            // NoObjectInView인 경우, DoA 방향에 마커를 생성
+            // NoObjectInView인 경우, DoA 방향에 경고 UI를 표시
             else if (matchResult.ResultType == SoundMatchResultType.NoObjectInView)
             {
-                // 마커 위치 설정
-                var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
-                Vector3 markerPosition = camera.position + soundDirection * 0.25f; // 0.25미터 앞에 생성
+                int doa = matchResult.Doa;
+                string soundLabel = matchResult.SoundLabel;
 
-                // Raycast 없이 마커 생성
-                if (PlaceMarkerAtPosition(markerPosition, matchResult.SoundLabel))
+                // 오른쪽
+                if (doa > 20 && doa <= m_soundObjectMatcher.sight)
                 {
-                    count++;
+                    var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
+                    warningUI?.SetWarningText("오른쪽", soundLabel);
+                    m_NoObjectInViewMsgRight.SetActive(true);
+                }
+                // 왼쪽
+                else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
+                {
+                    var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
+                    warningUI?.SetWarningText("왼쪽", soundLabel);
+                    m_NoObjectInViewMsgLeft.SetActive(true);
+                }
+                // 정면
+                else
+                {
+                    var warningUI = m_NoObjectInViewMsgBottom.GetComponent<InViewWarningUI>();
+                    warningUI?.SetWarningText("정면", soundLabel);
+                    m_NoObjectInViewMsgBottom.SetActive(true);
                 }
             }
             // OutOfView 인 경우 화면 경고 표시
@@ -308,53 +332,6 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             return !existMarker;
         }
 
-        /// <summary>
-        /// 지정된 위치에 마커를 생성합니다. (Raycast 없이)
-        /// </summary>
-        private bool PlaceMarkerAtPosition(Vector3 position, string label)
-        {
-            // Check if you spanwed the same object before
-            var existMarker = false;
-            foreach (var e in m_spwanedEntities)
-            {
-                // 두 종류의 마커를 모두 확인합니다.
-                var defaultMarker = e.GetComponent<DetectionSpawnMarkerAnim>();
-                var emojiMarker = e.GetComponent<EmojiMarker>();
-
-                string markerLabel = "";
-                if (defaultMarker != null) markerLabel = defaultMarker.GetYoloClassName();
-                else if (emojiMarker != null) markerLabel = emojiMarker.GetSoundLabel();
-
-                if (!string.IsNullOrEmpty(markerLabel))
-                {
-                    var dist = Vector3.Distance(e.transform.position, position);
-                    if (dist < m_spawnDistance && markerLabel == label)
-                    {
-                        existMarker = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!existMarker)
-            {
-                // spawn a visual marker
-                GameObject prefabToSpawn = m_markerPrefabManager.GetPrefabForSoundLabel(label);
-                var eMarker = Instantiate(prefabToSpawn);
-                m_spwanedEntities.Add(eMarker);
-
-                // Update marker transform with the calculated position
-                eMarker.transform.SetPositionAndRotation(position, Quaternion.identity);
-
-                // 두 종류의 마커에 모두 이름을 설정합니다.
-                var defaultMarkerToSet = eMarker.GetComponent<DetectionSpawnMarkerAnim>();
-                var emojiMarkerToSet = eMarker.GetComponent<EmojiMarker>();
-                if (defaultMarkerToSet != null) defaultMarkerToSet.SetYoloClassName(label);
-                else if (emojiMarkerToSet != null) emojiMarkerToSet.SetSoundLabel(label);
-            }
-
-            return !existMarker;
-        }
         #endregion
 
         #region Public Functions

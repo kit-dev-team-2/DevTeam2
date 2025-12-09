@@ -30,6 +30,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         public UnityEvent<bool> OnPause;
 
         private bool m_initialMenu;
+        private OVRScreenFade _screenFade;
 
         // start menu
         private int m_objectsDetected = 0;
@@ -41,6 +42,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         #region Unity Functions
         private IEnumerator Start()
         {
+            _screenFade = FindFirstObjectByType<OVRScreenFade>();
             m_initialPanel.SetActive(false);
             m_noPermissionPanel.SetActive(false);
 
@@ -59,6 +61,12 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             {
                 yield return null;
             }
+
+            if (_screenFade != null && _screenFade.currentAlpha > 0)
+            {
+                _screenFade.FadeIn();
+            }
+
             OnInitialMenu();
 
             // 3초 동안 실제 시간 기준으로 대기합니다.
