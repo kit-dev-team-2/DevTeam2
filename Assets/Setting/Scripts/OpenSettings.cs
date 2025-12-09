@@ -11,6 +11,7 @@ public class OpenSettings : MonoBehaviour
     private ControllerPointer _pointer;
     private DetectionManager _detectionManager;
     private SettingsPanelController _settingsPanelController;
+    private DetectionUiMenuManager _detectionUiMenuManager;
 
     public void OnPanelToggled(bool isActive)
     {
@@ -41,6 +42,7 @@ public class OpenSettings : MonoBehaviour
         _pointer = FindObjectOfType<ControllerPointer>(true);
         _detectionManager = FindObjectOfType<DetectionManager>(true);
         _settingsPanelController = FindObjectOfType<SettingsPanelController>(true);
+        _detectionUiMenuManager = FindObjectOfType<DetectionUiMenuManager>(true);
 
         // 씬이 시작될 때, 컨트롤러 포인터가 비활성화된 상태로 시작하도록 보장합니다.
         if (_pointer != null)
@@ -61,6 +63,12 @@ public class OpenSettings : MonoBehaviour
         {
             if (SceneManager.GetActiveScene().name == "MultiObjectDetection")
             {
+                // 탐지가 시작된 후에만 설정 창을 열 수 있도록 함
+                if (_detectionUiMenuManager != null && !_detectionUiMenuManager.IsDetectionStarted)
+                {
+                    return;
+                }
+
                 if (_settingsPanelController != null)
                 {
                     bool newActive = !_settingsPanelController.gameObject.activeSelf;
