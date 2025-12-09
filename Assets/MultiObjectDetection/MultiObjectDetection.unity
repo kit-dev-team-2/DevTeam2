@@ -825,6 +825,9 @@ MonoBehaviour:
   detectDurationValueText: {fileID: 424655929}
   preBufferDurationSlider: {fileID: 459556182}
   preBufferDurationValueText: {fileID: 1858301607}
+  OnPanelClosed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &300557442
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1195,6 +1198,7 @@ GameObject:
   - component: {fileID: 369665890}
   - component: {fileID: 369665889}
   - component: {fileID: 369665891}
+  - component: {fileID: 369665892}
   m_Layer: 0
   m_Name: SettingManager
   m_TagString: Untagged
@@ -1239,6 +1243,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec8ffd3b2e28748b1b727a83f4b826fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &369665892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369665888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e75652aec88a4869b6e006124dc93bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &375552826
@@ -5268,7 +5284,7 @@ MonoBehaviour:
   m_SendPointerHoverToParent: 1
   rayTransform: {fileID: 256469436}
   m_Cursor: {fileID: 0}
-  joyPadClickButton: 1
+  joyPadClickButton: 257
   gazeClickKey: 32
   performSphereCastForGazepointer: 0
   useRightStickScroll: 1

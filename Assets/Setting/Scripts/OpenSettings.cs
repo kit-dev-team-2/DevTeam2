@@ -6,41 +6,47 @@ using PassthroughCameraSamples.MultiObjectDetection;
 public class OpenSettings : MonoBehaviour
 {
     private bool _isPanelActive = false;
-    private DebugUIBuilder _debugUI;
+
+    // 컴포넌트들을 캐싱하기 위한 변수
+    private ControllerPointer _pointer;
+    private DetectionManager _detectionManager;
+    private SettingsPanelController _settingsPanelController;
 
     public void OnPanelToggled(bool isActive)
     {
         _isPanelActive = isActive;
 
         // 포인터 on/off
-        var pointer = FindObjectOfType<ControllerPointer>(true);
-        if (pointer != null)
+        if (_pointer != null)
         {
-            pointer.gameObject.SetActive(_isPanelActive);
+            _pointer.gameObject.SetActive(_isPanelActive);
         }
 
         // Detection on/off
-        var detectionManager = FindObjectOfType<DetectionManager>();
-        if (detectionManager != null)
+        if (_detectionManager != null)
         {
-            detectionManager.OnPause(_isPanelActive);
+            _detectionManager.OnPause(_isPanelActive);
 
             // 패널이 켜질 때만 기존 마커 제거
             if (_isPanelActive)
             {
-                detectionManager.ClearAllDetectionVisuals();
+                _detectionManager.ClearAllDetectionVisuals();
             }
         }
-    }      
+    }
 
 
     private void Start()
     {
+        // 씬 시작 시 필요한 컴포넌트들을 미리 찾아둡니다.
+        _pointer = FindObjectOfType<ControllerPointer>(true);
+        _detectionManager = FindObjectOfType<DetectionManager>(true);
+        _settingsPanelController = FindObjectOfType<SettingsPanelController>(true);
+
         // 씬이 시작될 때, 컨트롤러 포인터가 비활성화된 상태로 시작하도록 보장합니다.
-        var pointer = FindObjectOfType<ControllerPointer>(true);
-        if (pointer != null)
+        if (_pointer != null)
         {
-            pointer.gameObject.SetActive(false);
+            _pointer.gameObject.SetActive(false);
         }
     }
 
@@ -50,13 +56,12 @@ public class OpenSettings : MonoBehaviour
         {
             if (SceneManager.GetActiveScene().name == "MultiObjectDetection")
             {
-                var settingsPanelController = FindObjectOfType<SettingsPanelController>(true);
-                if (settingsPanelController != null)
+                if (_settingsPanelController != null)
                 {
-                    bool newActive = !settingsPanelController.gameObject.activeSelf;
+                    bool newActive = !_settingsPanelController.gameObject.activeSelf;
 
                     // 패널 on/off
-                    settingsPanelController.gameObject.SetActive(newActive);
+                    _settingsPanelController.gameObject.SetActive(newActive);
 
                     // 상태 + 포인터 + Detection 전부 동기화
                     OnPanelToggled(newActive);

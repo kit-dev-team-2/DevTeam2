@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
+using PassthroughCameraSamples.MultiObjectDetection;
 
 public class SettingsPanelController : MonoBehaviour
 {
@@ -22,6 +24,9 @@ public class SettingsPanelController : MonoBehaviour
 
     public Slider preBufferDurationSlider;
     public Text preBufferDurationValueText;
+
+    [Header("Events")]
+    public UnityEvent OnPanelClosed;
 
     private void OnEnable()
     {
@@ -135,12 +140,6 @@ public class SettingsPanelController : MonoBehaviour
         var panel = settingsPanel != null ? settingsPanel : gameObject;
         panel.SetActive(false);
 
-        // OpenSettings 쪽 상태/포인터/Detection도 false로 동기화
-        var openSettings = FindObjectOfType<OpenSettings>();
-        if (openSettings != null)
-        {
-            openSettings.OnPanelToggled(false);
-        }
-
+        OnPanelClosed?.Invoke();
     }
 }
