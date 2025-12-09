@@ -105,6 +105,16 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         #region Marker Functions
         /// <summary>
         /// Clean 3d markers when the tracking space is re-centered.
+        /// 이제 이 메서드는 모든 시각적 요소를 지우는 역할을 합니다.
+        /// </summary>
+        public void ClearAllDetectionVisuals()
+        {
+            ClearAllMarkers();
+            ClearAllWarnings();
+        }
+
+        /// <summary>
+        /// 생성된 모든 마커(이모지)를 제거합니다.
         /// </summary>
         private void ClearAllMarkers()
         {
@@ -117,11 +127,24 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         }
 
         /// <summary>
+        /// 화면에 표시된 모든 경고 UI (테두리, 메시지)를 비활성화합니다.
+        /// </summary>
+        private void ClearAllWarnings()
+        {
+            if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
+            if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
+            if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
+            if (m_NoObjectInViewMsgLeft) m_NoObjectInViewMsgLeft.SetActive(false);
+            if (m_NoObjectInViewMsgBottom) m_NoObjectInViewMsgBottom.SetActive(false);
+            if (m_NoObjectInViewMsgRight) m_NoObjectInViewMsgRight.SetActive(false);
+        }
+
+        /// <summary>
         /// OVRManager의 RecenteredPose 이벤트에 연결될 콜백 함수입니다.
         /// </summary>
         private void CleanMarkersCallBack()
         {
-            ClearAllMarkers();
+            ClearAllDetectionVisuals();
         }
 
         /// <summary>
@@ -140,16 +163,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // 새로운 소리가 감지되었을 경우(성공/실패 무관) 기존 마커를 모두 지웁니다.
             if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
             {
-                ClearAllMarkers();
-                // 새로운 소리가 감지되면 모든 경고 테두리를 비활성화합니다.
-                if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
-                if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
-                if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
-                // 시야 내 경고 메시지 비활성화
-                if (m_NoObjectInViewMsgLeft) m_NoObjectInViewMsgLeft.SetActive(false);
-                if (m_NoObjectInViewMsgBottom) m_NoObjectInViewMsgBottom.SetActive(false);
-                if (m_NoObjectInViewMsgRight) m_NoObjectInViewMsgRight.SetActive(false);
-
+                ClearAllDetectionVisuals();
             }
 
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)
