@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
+using PassthroughCameraSamples.MultiObjectDetection;
 
 public class SettingsPanelController : MonoBehaviour
 {
     [Header("Root")]
     public GameObject settingsPanel;    // SettingsPanel만 참조 (없으면 gameObject 써도 됨)
-    public GameObject settingsButton;     // SettingsButton
 
     [Header("Emoji Settings")]
     public Slider emojiScaleSlider;
@@ -23,6 +24,9 @@ public class SettingsPanelController : MonoBehaviour
 
     public Slider preBufferDurationSlider;
     public Text preBufferDurationValueText;
+
+    [Header("Events")]
+    public UnityEvent OnPanelClosed;
 
     private void OnEnable()
     {
@@ -99,22 +103,31 @@ public class SettingsPanelController : MonoBehaviour
 
         var s = SettingsManager.Instance.Current;
 
+        // 1) 슬라이더 값 → SettingsManager에 반영
         s.emojiScale = emojiScaleSlider.value;
         s.emojiAlpha = emojiAlphaSlider.value;
-
         s.CONF_THRESH = confThreshSlider.value;
         s.DETECT_DURATION = detectDurationSlider.value;
         s.PRE_BUFFER_DURATION = preBufferDurationSlider.value;
 
         SettingsManager.Instance.Save();
 
-        if (QuestWsClient.Instance != null)
+        // 2) 이모지 프리팹 스케일 적용
+        var markerManager = FindObjectOfType<MarkerPrefabManager>();
+        if (markerManager != null)
         {
-            // QuestWsClient.Instance.SendConfigUpdateFromSettings();
+            markerManager.ApplyEmojiScale(s.emojiScale);
         }
+
+        // 3) (옵션) 서버로 config_update 던지고 싶으면 여기
+        // if (QuestWsClient.Instance != null)
+        // {
+        //     QuestWsClient.Instance.SendConfigUpdateFromSettings();
+        // }
 
         Close();
     }
+
 
     public void OnClickCancel()
     {
@@ -123,12 +136,10 @@ public class SettingsPanelController : MonoBehaviour
 
     private void Close()
     {
-        // 자기 자신만 끄면 됨
+        OnPanelClosed?.Invoke();
+
+        // 패널 끄기
         var panel = settingsPanel != null ? settingsPanel : gameObject;
         panel.SetActive(false);
-
-        // Setting 버튼 다시 켜기
-        if (settingsButton != null)
-            settingsButton.SetActive(true);
     }
 }
