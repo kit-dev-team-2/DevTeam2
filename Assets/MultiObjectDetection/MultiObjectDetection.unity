@@ -5188,6 +5188,7 @@ GameObject:
   - component: {fileID: 1564000680}
   - component: {fileID: 1564000679}
   - component: {fileID: 1564000682}
+  - component: {fileID: 1564000683}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -5271,7 +5272,7 @@ MonoBehaviour:
   m_SendPointerHoverToParent: 1
   rayTransform: {fileID: 256469436}
   m_Cursor: {fileID: 0}
-  joyPadClickButton: 257
+  joyPadClickButton: 1
   gazeClickKey: 32
   performSphereCastForGazepointer: 0
   useRightStickScroll: 1
@@ -5288,6 +5289,18 @@ MonoBehaviour:
   m_CancelButton: Cancel
   m_InputActionsPerSecond: 10
   m_AllowActivationOnMobileDevice: 1
+--- !u!114 &1564000683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1564000678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a9503ab7d8e7458c9aa9e32387a4a2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1604509063
 GameObject:
   m_ObjectHideFlags: 0

@@ -35,7 +35,6 @@ public class OpenSettings : MonoBehaviour
         }
     }
 
-
     private void Start()
     {
         // 씬 시작 시 필요한 컴포넌트들을 미리 찾아둡니다.
@@ -47,6 +46,12 @@ public class OpenSettings : MonoBehaviour
         if (_pointer != null)
         {
             _pointer.gameObject.SetActive(false);
+        }
+
+        // 패널의 OnPanelClosed 이벤트에 리스너를 추가합니다.
+        if (_settingsPanelController != null)
+        {
+            _settingsPanelController.OnPanelClosed.AddListener(() => OnPanelToggled(false));
         }
     }
 

@@ -136,10 +136,10 @@ public class SettingsPanelController : MonoBehaviour
 
     private void Close()
     {
+        OnPanelClosed?.Invoke();
+
         // 패널 끄기
         var panel = settingsPanel != null ? settingsPanel : gameObject;
         panel.SetActive(false);
-
-        OnPanelClosed?.Invoke();
     }
 }
