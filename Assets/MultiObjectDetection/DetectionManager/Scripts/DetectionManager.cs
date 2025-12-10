@@ -24,6 +24,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
+        [Tooltip("시야 밖 소리 경고 UI: 위쪽")]
+        [SerializeField] private GameObject m_outOfViewBorderTop;
         [Tooltip("시야 밖 소리 경고 UI: 왼쪽")]
         [SerializeField] private GameObject m_outOfViewBorderLeft;
         [Tooltip("시야 밖 소리 경고 UI: 아래쪽")]
@@ -210,23 +212,35 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // OutOfView 인 경우 화면 경고 표시
             else if (matchResult.ResultType == SoundMatchResultType.OutOfView)
             {
-                int doa = matchResult.Doa;
-                // DoA 값에 따라 방향을 결정하고 해당 테두리를 활성화합니다.
-                // 남동 (sight < doa <= 150) -> 오른쪽 테두리
-                if (doa > m_soundObjectMatcher.sight && doa <= 150)
+                if (matchResult.SoundLabel == "Explosion")
                 {
+                    // 4방향 테두리 활성화
                     m_outOfViewBorderRight.SetActive(true);
-                }
-                // 남서 (210 <= doa < 360 - sight) -> 왼쪽 테두리
-                else if (doa >= 210 && doa < 360 - m_soundObjectMatcher.sight)
-                {
                     m_outOfViewBorderLeft.SetActive(true);
+                    m_outOfViewBorderBottom.SetActive(true);
+                    m_outOfViewBorderTop.SetActive(true);
                 }
-                // 남 (150 < doa < 210) -> 아래쪽 테두리
                 else
                 {
-                    m_outOfViewBorderBottom.SetActive(true);
+                    int doa = matchResult.Doa;
+                    // DoA 값에 따라 방향을 결정하고 해당 테두리를 활성화합니다.
+                    // 남동 (sight < doa <= 150) -> 오른쪽 테두리
+                    if (doa > m_soundObjectMatcher.sight && doa <= 150)
+                    {
+                        m_outOfViewBorderRight.SetActive(true);
+                    }
+                    // 남서 (210 <= doa < 360 - sight) -> 왼쪽 테두리
+                    else if (doa >= 210 && doa < 360 - m_soundObjectMatcher.sight)
+                    {
+                        m_outOfViewBorderLeft.SetActive(true);
+                    }
+                    // 남 (150 < doa < 210) -> 아래쪽 테두리
+                    else
+                    {
+                        m_outOfViewBorderBottom.SetActive(true);
+                    }
                 }
+
             }
 
             if (count > 0)
