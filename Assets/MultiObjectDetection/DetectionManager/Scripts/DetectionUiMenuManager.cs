@@ -26,6 +26,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private float m_autoStartTime = 3.0f;
 
         public bool IsInputActive { get; set; } = false;
+        public bool IsDetectionStarted { get; private set; } = false;
 
         public UnityEvent<bool> OnPause;
 
@@ -74,6 +75,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
             // 3초 후, 시작 메뉴를 숨기고 탐지를 시작합니다.
             m_detectionManager.StartDetection();
+            IsDetectionStarted = true;
             OnPauseMenu(false);
         }
 

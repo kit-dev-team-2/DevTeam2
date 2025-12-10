@@ -22,8 +22,8 @@ public class QuestWsClient : MonoBehaviour
     ClientWebSocket ws;
     CancellationTokenSource cts;
 
-    // ====== 메시지 타입들 ======
 
+    #region 메시지 클래스 정의
     [Serializable]
     public class HelloMsg
     {
@@ -32,7 +32,6 @@ public class QuestWsClient : MonoBehaviour
         public long t;
     }
 
-    // ★ 주기적인 ack용
     [Serializable]
     public class AckMsg
     {
@@ -64,8 +63,31 @@ public class QuestWsClient : MonoBehaviour
         public TagItem[] tags;
     }
 
+    #region 설정 메시지
+    [System.Serializable]
+    public class ModelConfigBody
+    {
+        public float CONF_THRESH;
+        public float DETECT_DURATION;
+        public float PRE_BUFFER_DURATION;
+        public float MIC_SAD_DB;
+    }
+
+    [System.Serializable]
+    public class ConfigUpdateMessage
+    {
+        public string type = "config_update";
+        public ModelConfigBody config;
+    }
+    #endregion
+
+    #endregion
+
     // 🔻 가장 최근에 받은 SoundResultMessage 전체를 저장할 변수
     private SoundResultMessage _latestSoundResult = null;
+
+    // 🔻 가장 최근에 받은 ModelConfigBody를 저장할 변수
+    private ModelConfigBody _latestModelConfig = null;
 
     // ====== 설정 ======
 
@@ -82,7 +104,6 @@ public class QuestWsClient : MonoBehaviour
                 };
 
                 await SendJson(ack);
-                // Debug.Log("[WS] sent ack");
 
                 await Task.Delay(ack_duration, cts.Token);
             }
@@ -108,7 +129,6 @@ public class QuestWsClient : MonoBehaviour
                 if (res.MessageType == WebSocketMessageType.Close) break;
 
                 var msg = Encoding.UTF8.GetString(buf, 0, res.Count);
-                // Debug.Log($"WS RX raw: {msg}");
 
                 HandleServerMessage(msg);
             }
@@ -119,7 +139,7 @@ public class QuestWsClient : MonoBehaviour
         }
     }
 
-    // ====== 여기서 서버 JSON 분기 처리 ======
+    #region 메시지 처리
     void HandleServerMessage(string json)
     {
         try
@@ -131,13 +151,17 @@ public class QuestWsClient : MonoBehaviour
             {
                 switch (typeWrap.type)
                 {
-                    case "detection":   // 서버에서 분류 결과 보낼 때 type="detection"으로 변경
+                    case "detection":
                         var res = JsonUtility.FromJson<SoundResultMessage>(json);
                         OnSoundResult(res);
                         break;
 
+                    case "config_update":
+                        var configMsg = JsonUtility.FromJson<ConfigUpdateMessage>(json);
+                        OnConfigUpdate(configMsg);
+                        break;
+
                     case "ack":
-                        // 서버가 보내는 ack가 있다면 여기서 처리
                         Debug.Log("[WS] server ack: " + json);
                         break;
 
@@ -161,6 +185,7 @@ public class QuestWsClient : MonoBehaviour
             Debug.LogWarning($"[WS] JSON parse failed: {json}\n{e}");
         }
     }
+    #endregion
 
     // 실제 게임/앱 로직으로 넘기는 함수
     void OnSoundResult(SoundResultMessage msg)
@@ -177,6 +202,26 @@ public class QuestWsClient : MonoBehaviour
     }
 
     /// <summary>
+    /// 서버로부터 받은 설정 업데이트 메시지를 처리합니다.
+    /// </summary>
+    void OnConfigUpdate(ConfigUpdateMessage msg)
+    {
+        if (msg == null || msg.config == null)
+        {
+            Debug.LogWarning("[WS] Received invalid config_update message.");
+            return;
+        }
+
+        Debug.Log("[WS] Received config_update from server.");
+        _latestModelConfig = msg.config; // 수신된 설정값을 변수에 저장
+
+        Debug.Log($"  - CONF_THRESH: {msg.config.CONF_THRESH}");
+        Debug.Log($"  - DETECT_DURATION: {msg.config.DETECT_DURATION}");
+        Debug.Log($"  - PRE_BUFFER_DURATION: {msg.config.PRE_BUFFER_DURATION}");
+        Debug.Log($"  - MIC_SAD_DB: {msg.config.MIC_SAD_DB}");
+    }
+
+    /// <summary>
     /// 가장 최근에 받은 SoundResultMessage 전체를 반환하고, 변수를 비워 중복 처리를 방지합니다.
     /// </summary>
     public SoundResultMessage GetAndClearLatestSoundResult()
@@ -189,6 +234,42 @@ public class QuestWsClient : MonoBehaviour
         SoundResultMessage resultToReturn = _latestSoundResult;
         _latestSoundResult = null; // 값을 가져갔으므로 비워줍니다.
         return resultToReturn;
+    }
+
+    /// <summary>
+    /// 가장 최근에 받은 모델 설정 값을 반환합니다.
+    /// </summary>
+    /// <returns>가장 최근의 ModelConfigBody 객체</returns>
+    public ModelConfigBody GetLatestModelConfig()
+    {
+        return _latestModelConfig;
+    }
+
+    /// <summary>
+    /// SettingsManager의 현재 설정값을 기반으로 서버에 config_update 메시지를 전송합니다.
+    /// </summary>
+    public async void SendConfigUpdateFromSettings()
+    {
+        if (SettingsManager.Instance == null || SettingsManager.Instance.Current == null)
+        {
+            Debug.LogWarning("[QuestWsClient] SettingsManager or Current settings is null. Cannot send config_update.");
+            return;
+        }
+
+        AppSettings s = SettingsManager.Instance.Current;
+
+        var msg = new ConfigUpdateMessage
+        {
+            type = "config_update",
+            config = new ModelConfigBody
+            {
+                CONF_THRESH = s.CONF_THRESH,
+                DETECT_DURATION = s.DETECT_DURATION,
+                PRE_BUFFER_DURATION = s.PRE_BUFFER_DURATION
+            }
+        };
+
+        await SendJson(msg);
     }
 
     async Task SendJson<T>(T obj)
