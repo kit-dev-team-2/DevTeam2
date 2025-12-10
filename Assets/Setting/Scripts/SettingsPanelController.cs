@@ -125,11 +125,15 @@ public class SettingsPanelController : MonoBehaviour
             warning.ApplyAlphaFromSettings();
         }
 
-        // 3) (옵션) 서버로 config_update 던지고 싶으면 여기
-        // if (QuestWsClient.Instance != null)
-        // {
-        //     QuestWsClient.Instance.SendConfigUpdateFromSettings();
-        // }
+        if (QuestWsClient.Instance != null && QuestWsClient.Instance.IsConnected())
+        {
+            // fire-and-forget 방식으로 호출 (await 안 함)
+            _ = QuestWsClient.Instance.SendConfigUpdateFromSettings();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingsPanel] WS not connected. Cannot send config_update.");
+        }
 
         Close();
     }
