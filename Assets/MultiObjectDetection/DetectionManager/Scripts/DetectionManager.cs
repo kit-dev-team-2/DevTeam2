@@ -13,14 +13,26 @@ namespace PassthroughCameraSamples.MultiObjectDetection
     [MetaCodeSample("PassthroughCameraApiSamples-MultiObjectDetection")]
     public class DetectionManager : MonoBehaviour
     {
+        /// <summary>
+        /// FindBestObjectForDoa 함수의 결과를 나타냅니다.
+        /// </summary>
+        private enum FindBestObjectResult
+        {
+            Success,      // 명확한 객체를 찾음
+            NoMatch,      // 조건에 맞는 객체를 찾지 못함
+            Ambiguous     // 여러 객체가 후보이고, 조건이 모호함
+        }
+
         [SerializeField] private PassthroughCameraAccess m_cameraAccess;
 
         [Header("Controls configuration")]
         [SerializeField] private OVRInput.RawButton m_actionButton = OVRInput.RawButton.A;
 
         [Header("Matching configuration")]
-        [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다. 이 각도보다 차이가 크면 매칭되지 않습니다.")]
+        [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다.")]
         [SerializeField, Range(0, 90)] private float m_matchingAngleThreshold = 30.0f;
+        [Tooltip("두 객체의 소리 방향 각도 차이가 이 값 미만일 경우, 모호한 상황으로 간주하여 거리 비교를 시작합니다.")]
+        [SerializeField, Range(0, 10)] private float m_ambiguousAngleThreshold = 5.0f;
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
@@ -35,11 +47,10 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Tooltip("경고 메시지 UI: 왼쪽")]
         [SerializeField] private GameObject m_NoObjectInViewMsgLeft;
-        [Tooltip("경고 메시지 UI: 아래쪽")]
-        [SerializeField] private GameObject m_NoObjectInViewMsgBottom;
+        [Tooltip("경고 메시지 UI: 정면")]
+        [SerializeField] private GameObject m_NoObjectInViewMsgFront;
         [Tooltip("경고 메시지 UI: 오른쪽")]
         [SerializeField] private GameObject m_NoObjectInViewMsgRight;
-
 
         [Header("Placement configureation")]
         [SerializeField] private MarkerPrefabManager m_markerPrefabManager; // 이모지 프리팹 매니저
@@ -135,10 +146,10 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         {
             if (m_outOfViewMsg) m_outOfViewMsg.SetActive(false);
             if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
-            if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
+            if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false); // This seems to be for OutOfView, not NoObjectInView
             if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
             if (m_NoObjectInViewMsgLeft) m_NoObjectInViewMsgLeft.SetActive(false);
-            if (m_NoObjectInViewMsgBottom) m_NoObjectInViewMsgBottom.SetActive(false);
+            if (m_NoObjectInViewMsgFront) m_NoObjectInViewMsgFront.SetActive(false);
             if (m_NoObjectInViewMsgRight) m_NoObjectInViewMsgRight.SetActive(false);
         }
 
@@ -160,8 +171,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             var allDetectedObjects = m_uiInference.BoxDrawn;
             var matchResult = m_soundObjectMatcher.GetMatchedObjects(allDetectedObjects);
 
-            // DoA를 3D 공간의 방향 벡터로 변환
-            Vector3 soundDirection = GetDirectionFromDoa(matchResult.Doa);
+            // DoA를 월드 좌표계의 수평 각도(Y축 기준)로 변환
+            float soundAngle = GetWorldAngleFromDoa(matchResult.Doa);
 
             // 새로운 소리가 감지되었을 경우(성공/실패 무관) 기존 마커를 모두 지웁니다.
             if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
@@ -171,44 +182,36 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)
             {
-                // DoA 각도와 가장 일치하는 위치의 객체를 찾습니다.
-                // out 키워드를 사용하여 bestMatchedObject를 전달하고, 성공 여부를 bool로 받습니다.
-                if (FindBestObjectForDoa(soundDirection, matchResult, out var bestMatchedObject))
+                var findResult = FindBestObjectForDoa(soundAngle, matchResult, out var bestMatchedObject);
+
+                switch (findResult)
                 {
-                    // 최종 선택된 하나의 객체에만 마커를 생성합니다.
-                    if (PlaceMarkerUsingEnvironmentRaycast(bestMatchedObject.WorldPos, matchResult.SoundLabel))
-                    {
-                        count++;
-                    }
+                    // 1. 명확한 객체를 찾은 경우: 마커를 표시합니다.
+                    case FindBestObjectResult.Success:
+                        if (PlaceMarkerUsingEnvironmentRaycast(bestMatchedObject.WorldPos, matchResult.SoundLabel))
+                        {
+                            count++;
+                        }
+                        break;
+
+                    // 2. 모호한 상황인 경우: "주변" 메시지를 표시합니다.
+                    case FindBestObjectResult.Ambiguous:
+                        var ambiguousWarningUI = m_NoObjectInViewMsgFront.GetComponent<InViewWarningUI>();
+                        ambiguousWarningUI?.SetWarningText("주변", matchResult.SoundLabel);
+                        m_NoObjectInViewMsgFront.SetActive(true);
+                        break;
+
+                    // 3. 조건에 맞는 객체를 못 찾은 경우: 기존처럼 방향별 메시지를 표시합니다.
+                    case FindBestObjectResult.NoMatch:
+                        // 시야에 객체는 있지만 각도가 맞지 않는 경우, NoObjectInView와 동일하게 처리합니다.
+                        ShowDirectionalWarning(matchResult.Doa, matchResult.SoundLabel);
+                        break;
                 }
             }
             // NoObjectInView인 경우, DoA 방향에 경고 UI를 표시
             else if (matchResult.ResultType == SoundMatchResultType.NoObjectInView)
             {
-                int doa = matchResult.Doa;
-                string soundLabel = matchResult.SoundLabel;
-
-                // 왼쪽
-                if (doa > 20 && doa <= m_soundObjectMatcher.sight)
-                {
-                    var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
-                    warningUI?.SetWarningText("왼쪽", soundLabel);
-                    m_NoObjectInViewMsgLeft.SetActive(true);
-                }
-                // 오른쪽
-                else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
-                {
-                    var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
-                    warningUI?.SetWarningText("오른쪽", soundLabel);
-                    m_NoObjectInViewMsgRight.SetActive(true);
-                }
-                // 정면
-                else
-                {
-                    var warningUI = m_NoObjectInViewMsgBottom.GetComponent<InViewWarningUI>();
-                    warningUI?.SetWarningText("정면", soundLabel);
-                    m_NoObjectInViewMsgBottom.SetActive(true);
-                }
+                ShowDirectionalWarning(matchResult.Doa, matchResult.SoundLabel);
             }
             // OutOfView 인 경우 화면 경고 표시
             else if (matchResult.ResultType == SoundMatchResultType.OutOfView)
@@ -256,57 +259,98 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         }
 
         /// <summary>
+        /// DOA 값에 따라 방향별 경고 UI를 표시합니다.
+        /// </summary>
+        private void ShowDirectionalWarning(int doa, string soundLabel)
+        {
+            // 오른쪽
+            if (doa > 20 && doa <= m_soundObjectMatcher.sight)
+            {
+                var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
+                warningUI?.SetWarningText("오른쪽", soundLabel);
+                m_NoObjectInViewMsgRight.SetActive(true);
+
+            }
+            // 왼쪽
+            else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
+            {
+                var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
+                warningUI?.SetWarningText("왼쪽", soundLabel);
+                m_NoObjectInViewMsgLeft.SetActive(true);
+            }
+            // 정면
+            else
+            {
+                var warningUI = m_NoObjectInViewMsgFront.GetComponent<InViewWarningUI>();
+                warningUI?.SetWarningText("정면", soundLabel);
+                m_NoObjectInViewMsgFront.SetActive(true);
+            }
+        }
+
+        /// <summary>
         /// DOA 값과 가장 가까운 화면상 위치의 객체를 찾습니다.
         /// </summary>
-        private bool FindBestObjectForDoa(Vector3 soundDirection, SoundMatchResult matchResult, out SentisInferenceUiManager.BoundingBox bestObject)
+        private FindBestObjectResult FindBestObjectForDoa(float soundAngle, SoundMatchResult matchResult, out SentisInferenceUiManager.BoundingBox bestObject)
         {
-            float minDifference = float.MaxValue;
             bestObject = default; // bestObject를 기본값으로 초기화
+            if (matchResult.MatchedObjects.Count == 0) return FindBestObjectResult.NoMatch;
 
             var camera = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
+            List<(SentisInferenceUiManager.BoundingBox obj, float angleDiff, float distance)> candidates = new();
 
             // 모든 매칭된 객체 중에서, 소리 방향과 가장 가까운 방향에 있는 객체를 찾습니다.
             foreach (var obj in matchResult.MatchedObjects)
             {
                 if (!obj.WorldPos.HasValue) continue; // 객체의 3D 위치가 없으면 건너뜁니다.
 
-                // 카메라 위치에서 객체를 바라보는 방향 벡터를 계산합니다.
-                Vector3 objectDirection = (obj.WorldPos.Value - camera.position).normalized;
+                Vector3 toObject = obj.WorldPos.Value - camera.position;
+                float objectAngle = Vector3.SignedAngle(camera.forward, toObject, Vector3.up);
+                float difference = Mathf.Abs(Mathf.DeltaAngle(soundAngle, objectAngle));
 
-                // 소리 방향 벡터와 객체 방향 벡터 사이의 각도 차이를 계산합니다.
-                float difference = Vector3.Angle(soundDirection, objectDirection);
-
-                if (difference < minDifference)
+                // 1. 각도 차이가 허용 임계값(m_matchingAngleThreshold) 이내인 객체만 후보로 추가합니다.
+                if (difference <= m_matchingAngleThreshold)
                 {
-                    minDifference = difference;
-                    bestObject = obj;
+                    candidates.Add((obj, difference, toObject.magnitude));
                 }
             }
 
-            // 찾은 최소 각도 차이가 설정한 임계값보다 작거나 같을 때만 성공
-            bool success = minDifference <= m_matchingAngleThreshold;
-            if (!success) { Debug.Log($"[DetectionManager] Best match found, but angle difference ({minDifference}°) exceeds threshold ({m_matchingAngleThreshold}°). No match."); }
-            return success;
+            if (candidates.Count == 0)
+            {
+                Debug.Log($"[DetectionManager] No objects within angle threshold ({m_matchingAngleThreshold}°).");
+                return FindBestObjectResult.NoMatch;
+            }
+
+            // 후보들을 각도 차이가 적은 순으로 정렬합니다.
+            candidates.Sort((a, b) => a.angleDiff.CompareTo(b.angleDiff));
+
+            bestObject = candidates[0].obj;
+            float minAngleDiff = candidates[0].angleDiff;
+
+            // 2. 후보가 2개 이상이고, 1순위와 2순위의 각도 차이가 매우 작은지(모호한지) 확인합니다.
+            if (candidates.Count > 1 && (candidates[1].angleDiff - minAngleDiff) < m_ambiguousAngleThreshold)
+            {
+                // 2-2. 모호한 상황: 1순위와 2순위의 '거리'가 매우 가까운지 확인합니다. (예: 0.5미터 이내)
+                if (Mathf.Abs(candidates[1].distance - candidates[0].distance) < 0.5f)
+                {
+                    Debug.Log($"[DetectionManager] Ambiguous situation: Multiple objects at similar angles and distances. Showing message box.");
+                    return FindBestObjectResult.Ambiguous; // 모호한 상태로 반환
+                }
+            }
+
+            // 2-1. 모호하지 않거나, 모호하더라도 거리 차이가 충분히 나서 가장 가까운 객체를 선택한 경우
+            Debug.Log($"[DetectionManager] Best match found: {bestObject.ClassName}, Angle Diff: {minAngleDiff:F2}°, Dist: {candidates[0].distance:F2}m. Yes match.");
+            return FindBestObjectResult.Success;
         }
 
         /// <summary>
-        /// DOA 각도를 3D 공간의 방향 벡터로 변환
+        /// DOA 각도를 월드 좌표계의 수평 각도(Y축 기준)로 변환합니다.
         /// </summary>
-        private Vector3 GetDirectionFromDoa(int doa)
+        private float GetWorldAngleFromDoa(int doa)
         {
-            var centerEye = FindFirstObjectByType<OVRCameraRig>().centerEyeAnchor;
-            int sight = m_soundObjectMatcher.sight;
-
-            // 1. DoA 각도를 -sight ~ +sight 범위로 정규화합니다. (예: 310도 -> -50도)
+            // 1. DoA 각도를 -180 ~ 180 범위로 정규화합니다. (예: 350도 -> -10도)
             float normalizedDoa = (doa > 180) ? doa - 360 : doa;
-
-            // 2. 정규화된 DoA를 실제 시야각에 비례하는 각도로 변환합니다.
-            //    (예: -50도 -> -25도, +50도 -> +25도, 만약 실제 시야각이 50도라면)
-            float targetAngle = (normalizedDoa / sight) * (centerEye.GetComponent<Camera>().fieldOfView / 2.0f);
-
-            // 3. 카메라의 정면 방향을 기준으로 계산된 targetAngle만큼 Y축 회전시켜 최종 방향을 계산합니다.
-            Vector3 direction = Quaternion.AngleAxis(targetAngle, Vector3.up) * centerEye.forward;
-            return direction;
+            // DoA는 이미 카메라 기준의 각도이므로, 정규화된 값을 그대로 반환합니다.
+            return normalizedDoa;
         }
 
         /// <summary>
