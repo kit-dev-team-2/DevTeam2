@@ -24,8 +24,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Header("Ui references")]
         [SerializeField] private DetectionUiMenuManager m_uiMenuManager;
-        [Tooltip("시야 밖 소리 경고 UI: 위쪽")]
-        [SerializeField] private GameObject m_outOfViewBorderTop;
+        [Tooltip("시야 밖 소리 경고 UI: msg")]
+        [SerializeField] private GameObject m_outOfViewMsg;
         [Tooltip("시야 밖 소리 경고 UI: 왼쪽")]
         [SerializeField] private GameObject m_outOfViewBorderLeft;
         [Tooltip("시야 밖 소리 경고 UI: 아래쪽")]
@@ -133,6 +133,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         /// </summary>
         private void ClearAllWarnings()
         {
+            if (m_outOfViewMsg) m_outOfViewMsg.SetActive(false);
             if (m_outOfViewBorderLeft) m_outOfViewBorderLeft.SetActive(false);
             if (m_outOfViewBorderBottom) m_outOfViewBorderBottom.SetActive(false);
             if (m_outOfViewBorderRight) m_outOfViewBorderRight.SetActive(false);
@@ -187,19 +188,19 @@ namespace PassthroughCameraSamples.MultiObjectDetection
                 int doa = matchResult.Doa;
                 string soundLabel = matchResult.SoundLabel;
 
-                // 오른쪽
-                if (doa > 20 && doa <= m_soundObjectMatcher.sight)
-                {
-                    var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
-                    warningUI?.SetWarningText("오른쪽", soundLabel);
-                    m_NoObjectInViewMsgRight.SetActive(true);
-                }
                 // 왼쪽
-                else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
+                if (doa > 20 && doa <= m_soundObjectMatcher.sight)
                 {
                     var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
                     warningUI?.SetWarningText("왼쪽", soundLabel);
                     m_NoObjectInViewMsgLeft.SetActive(true);
+                }
+                // 오른쪽
+                else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
+                {
+                    var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
+                    warningUI?.SetWarningText("오른쪽", soundLabel);
+                    m_NoObjectInViewMsgRight.SetActive(true);
                 }
                 // 정면
                 else
@@ -212,35 +213,38 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // OutOfView 인 경우 화면 경고 표시
             else if (matchResult.ResultType == SoundMatchResultType.OutOfView)
             {
-                if (matchResult.SoundLabel == "Explosion")
+
+                int doa = matchResult.Doa;
+                string soundLabel = matchResult.SoundLabel;
+                // DoA 값에 따라 방향을 결정하고 해당 테두리를 활성화합니다.
+                // 남동 (sight < doa <= 150) -> 오른쪽 테두리
+                if (doa > m_soundObjectMatcher.sight && doa <= 150)
                 {
-                    // 4방향 테두리 활성화
-                    m_outOfViewBorderRight.SetActive(true);
                     m_outOfViewBorderLeft.SetActive(true);
-                    m_outOfViewBorderBottom.SetActive(true);
-                    m_outOfViewBorderTop.SetActive(true);
+
+                    var warningUI = m_outOfViewMsg.GetComponent<OutOfViewMsgUI>();
+                    warningUI?.SetWarningText("오른쪽 뒤", soundLabel);
+                    m_outOfViewMsg.SetActive(true);
                 }
+                // 남서 (210 <= doa < 360 - sight) -> 왼쪽 테두리
+                else if (doa >= 210 && doa < 360 - m_soundObjectMatcher.sight)
+                {
+                    m_outOfViewBorderRight.SetActive(true);
+
+                    var warningUI = m_outOfViewMsg.GetComponent<OutOfViewMsgUI>();
+                    warningUI?.SetWarningText("왼쪽 뒤", soundLabel);
+                    m_outOfViewMsg.SetActive(true);
+
+                }
+                // 남 (150 < doa < 210) -> 아래쪽 테두리
                 else
                 {
-                    int doa = matchResult.Doa;
-                    // DoA 값에 따라 방향을 결정하고 해당 테두리를 활성화합니다.
-                    // 남동 (sight < doa <= 150) -> 오른쪽 테두리
-                    if (doa > m_soundObjectMatcher.sight && doa <= 150)
-                    {
-                        m_outOfViewBorderRight.SetActive(true);
-                    }
-                    // 남서 (210 <= doa < 360 - sight) -> 왼쪽 테두리
-                    else if (doa >= 210 && doa < 360 - m_soundObjectMatcher.sight)
-                    {
-                        m_outOfViewBorderLeft.SetActive(true);
-                    }
-                    // 남 (150 < doa < 210) -> 아래쪽 테두리
-                    else
-                    {
-                        m_outOfViewBorderBottom.SetActive(true);
-                    }
-                }
+                    m_outOfViewBorderBottom.SetActive(true);
 
+                    var warningUI = m_outOfViewMsg.GetComponent<OutOfViewMsgUI>();
+                    warningUI?.SetWarningText("뒤", soundLabel);
+                    m_outOfViewMsg.SetActive(true);
+                }
             }
 
             if (count > 0)
