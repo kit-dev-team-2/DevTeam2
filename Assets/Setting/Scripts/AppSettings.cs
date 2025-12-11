@@ -1,6 +1,7 @@
 using System;
+using UnityEngine.Serialization;
 
-[Serializable]
+[System.Serializable]
 public class AppSettings
 {
     // Emoji 관련
@@ -9,7 +10,10 @@ public class AppSettings
 
     // 모델 설정
     public float CONF_THRESH = 0.5f;
-    public float DETECT_DURATION = 0.5f;
+
+    [FormerlySerializedAs("DETECT_DURATION")]
+    public float messageAlpha = 1.0f;
+
     public float PRE_BUFFER_DURATION = 0.2f;
     public float MIC_SAD_DB = 23.5f;
 }

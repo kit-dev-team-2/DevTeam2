@@ -68,9 +68,6 @@ public class QuestWsClient : MonoBehaviour
     public class ModelConfigBody
     {
         public float CONF_THRESH;
-        public float DETECT_DURATION;
-        public float PRE_BUFFER_DURATION;
-        public float MIC_SAD_DB;
     }
 
     [System.Serializable]
@@ -216,9 +213,6 @@ public class QuestWsClient : MonoBehaviour
         _latestModelConfig = msg.config; // 수신된 설정값을 변수에 저장
 
         Debug.Log($"  - CONF_THRESH: {msg.config.CONF_THRESH}");
-        Debug.Log($"  - DETECT_DURATION: {msg.config.DETECT_DURATION}");
-        Debug.Log($"  - PRE_BUFFER_DURATION: {msg.config.PRE_BUFFER_DURATION}");
-        Debug.Log($"  - MIC_SAD_DB: {msg.config.MIC_SAD_DB}");
     }
 
     /// <summary>
@@ -248,7 +242,7 @@ public class QuestWsClient : MonoBehaviour
     /// <summary>
     /// SettingsManager의 현재 설정값을 기반으로 서버에 config_update 메시지를 전송합니다.
     /// </summary>
-    public async void SendConfigUpdateFromSettings()
+    public async Task SendConfigUpdateFromSettings()
     {
         if (SettingsManager.Instance == null || SettingsManager.Instance.Current == null)
         {
@@ -263,9 +257,7 @@ public class QuestWsClient : MonoBehaviour
             type = "config_update",
             config = new ModelConfigBody
             {
-                CONF_THRESH = s.CONF_THRESH,
-                DETECT_DURATION = s.DETECT_DURATION,
-                PRE_BUFFER_DURATION = s.PRE_BUFFER_DURATION
+                CONF_THRESH = s.CONF_THRESH
             }
         };
 
@@ -339,6 +331,9 @@ public class QuestWsClient : MonoBehaviour
                 device = SystemInfo.deviceModel,
                 t = NowMs()
             });
+
+            // 연결 성공 후 현재 설정값 전송
+            await SendConfigUpdateFromSettings();
 
             // 주기적인 ack 및 수신 루프 시작
             _ = HeartbeatLoop();

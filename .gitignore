@@ -6,6 +6,7 @@ obj/
 Build/
 .vs/
 .vsconfig
+.vscode
 *.csproj
 *.sln
 /.utmp
@@ -16,6 +17,8 @@ ProjectSettings\Packages\com.unity.testtools.codecoverage\Settings.json
 PerformanceTestRun*.*
 StreamingAssets*
 !NativeSamples.zip
+.passthroughcamera_BurstDebugInformation_DoNotShip
+mono_crash.*
 
 ### macOS ###
 # General
