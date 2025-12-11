@@ -15,8 +15,8 @@ public class SettingsSceneController : MonoBehaviour
     public Slider confThreshSlider;
     public Text confThreshValueText;
 
-    public Slider detectDurationSlider;
-    public Text detectDurationValueText;
+    public Slider MessageAlphaSlider;
+    public Text MessageAlphaValueText;
 
     public Slider preBufferDurationSlider;
     public Text preBufferDurationValueText;
@@ -35,7 +35,7 @@ public class SettingsSceneController : MonoBehaviour
         emojiAlphaSlider.value = s.emojiAlpha;
 
         confThreshSlider.value = s.CONF_THRESH;
-        detectDurationSlider.value = s.DETECT_DURATION;
+        MessageAlphaSlider.value = s.messageAlpha;
         preBufferDurationSlider.value = s.PRE_BUFFER_DURATION;
     }
 
@@ -45,7 +45,7 @@ public class SettingsSceneController : MonoBehaviour
         UpdateEmojiAlphaValueText(emojiAlphaSlider.value);
 
         UpdateConfThreshValueText(confThreshSlider.value);
-        UpdateDetectDurationValueText(detectDurationSlider.value);
+        UpdateMessageAlphaValueText(MessageAlphaSlider.value);
         UpdatePreBufferDurationValueText(preBufferDurationSlider.value);
     }
 
@@ -81,14 +81,14 @@ public class SettingsSceneController : MonoBehaviour
         confThreshValueText.text = value.ToString("0.00");
     }
 
-    public void OnDetectDurationSliderChanged(float value)
+    public void OnMessageAlphaSliderChanged(float value)
     {
-        UpdateDetectDurationValueText(value);
+        UpdateMessageAlphaValueText(value);
     }
 
-    private void UpdateDetectDurationValueText(float value)
+    private void UpdateMessageAlphaValueText(float value)
     {
-        detectDurationValueText.text = value.ToString("0.00") + " s";
+        MessageAlphaValueText.text = value.ToString("0.00") + " s";
     }
 
     public void OnPreBufferDurationSliderChanged(float value)
@@ -111,7 +111,7 @@ public class SettingsSceneController : MonoBehaviour
         s.emojiAlpha = emojiAlphaSlider.value;
 
         s.CONF_THRESH = confThreshSlider.value;
-        s.DETECT_DURATION = detectDurationSlider.value;
+        s.messageAlpha = MessageAlphaSlider.value;
         s.PRE_BUFFER_DURATION = preBufferDurationSlider.value;
 
         SettingsManager.Instance.Save();

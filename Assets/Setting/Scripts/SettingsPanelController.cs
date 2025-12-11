@@ -19,8 +19,8 @@ public class SettingsPanelController : MonoBehaviour
     public Slider confThreshSlider;
     public Text confThreshValueText;
 
-    public Slider detectDurationSlider;
-    public Text detectDurationValueText;
+    public Slider MessageAlphaSlider;
+    public Text MessageAlphaValueText;
 
     public Slider preBufferDurationSlider;
     public Text preBufferDurationValueText;
@@ -46,7 +46,7 @@ public class SettingsPanelController : MonoBehaviour
         emojiAlphaSlider.value = s.emojiAlpha;
 
         confThreshSlider.value = s.CONF_THRESH;
-        detectDurationSlider.value = s.DETECT_DURATION;
+        MessageAlphaSlider.value = s.messageAlpha;
         preBufferDurationSlider.value = s.PRE_BUFFER_DURATION;
     }
 
@@ -56,7 +56,7 @@ public class SettingsPanelController : MonoBehaviour
         UpdateEmojiAlphaValueText(emojiAlphaSlider.value);
 
         UpdateConfThreshValueText(confThreshSlider.value);
-        UpdateDetectDurationValueText(detectDurationSlider.value);
+        UpdateMessageAlphaValueText(MessageAlphaSlider.value);
         UpdatePreBufferDurationValueText(preBufferDurationSlider.value);
     }
 
@@ -79,10 +79,10 @@ public class SettingsPanelController : MonoBehaviour
         confThreshValueText.text = value.ToString("0.00");
     }
 
-    public void OnDetectDurationSliderChanged(float value) => UpdateDetectDurationValueText(value);
-    private void UpdateDetectDurationValueText(float value)
+    public void OnMessageAlphaSliderChanged(float value) => UpdateMessageAlphaValueText(value);
+    private void UpdateMessageAlphaValueText(float value)
     {
-        detectDurationValueText.text = value.ToString("0.00") + " s";
+        MessageAlphaValueText.text = value.ToString("0.00");
     }
 
     public void OnPreBufferDurationSliderChanged(float value) => UpdatePreBufferDurationValueText(value);
@@ -107,7 +107,7 @@ public class SettingsPanelController : MonoBehaviour
         s.emojiScale = emojiScaleSlider.value;
         s.emojiAlpha = emojiAlphaSlider.value;
         s.CONF_THRESH = confThreshSlider.value;
-        s.DETECT_DURATION = detectDurationSlider.value;
+        s.messageAlpha = MessageAlphaSlider.value;
         s.PRE_BUFFER_DURATION = preBufferDurationSlider.value;
 
         SettingsManager.Instance.Save();
@@ -119,11 +119,21 @@ public class SettingsPanelController : MonoBehaviour
             markerManager.ApplyEmojiScale(s.emojiScale);
         }
 
-        // 3) (옵션) 서버로 config_update 던지고 싶으면 여기
-        // if (QuestWsClient.Instance != null)
-        // {
-        //     QuestWsClient.Instance.SendConfigUpdateFromSettings();
-        // }
+        var warning = FindObjectOfType<WarningMessageAlphaController>(true);
+        if (warning != null)
+        {
+            warning.ApplyAlphaFromSettings();
+        }
+
+        if (QuestWsClient.Instance != null && QuestWsClient.Instance.IsConnected())
+        {
+            // fire-and-forget 방식으로 호출 (await 안 함)
+            _ = QuestWsClient.Instance.SendConfigUpdateFromSettings();
+        }
+        else
+        {
+            Debug.LogWarning("[SettingsPanel] WS not connected. Cannot send config_update.");
+        }
 
         Close();
     }

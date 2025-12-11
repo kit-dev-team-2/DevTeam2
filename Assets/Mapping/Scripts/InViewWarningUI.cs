@@ -4,13 +4,12 @@ using System.Collections.Generic;
 
 namespace PassthroughCameraSamples.MultiObjectDetection
 {
-
     public class InViewWarningUI : MonoBehaviour
     {
         [SerializeField]
         private TextMeshProUGUI _warningText;
 
-        private static readonly Dictionary<string, string> _soundObjectMap = new()
+        private readonly Dictionary<string, string> _InViewWarningMap = new()
         {
             { "Speech", "말"},
             { "Bark", "개"},
@@ -22,7 +21,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         public void SetWarningText(string direction, string soundLabel)
         {
-            string displaySoundLabel = _soundObjectMap[soundLabel];
+            string displaySoundLabel = _InViewWarningMap[soundLabel];
 
             _warningText.text = $"{displaySoundLabel} 소리가\n 들리는 것 같습니다.\n 주위를 살펴보세요!";
         }
