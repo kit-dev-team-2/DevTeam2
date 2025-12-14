@@ -30,7 +30,7 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Header("Matching configuration")]
         [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다.")]
-        [SerializeField, Range(0, 90)] private float m_matchingAngleThreshold = 30.0f;
+        [SerializeField, Range(0, 30)] private float m_matchingAngleThreshold = 30.0f;
         public void SetMatchingAngleThreshold(float value)
         {
             m_matchingAngleThreshold = value;

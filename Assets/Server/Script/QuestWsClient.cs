@@ -13,7 +13,7 @@ public class QuestWsClient : MonoBehaviour
 
     [Header("WebSocket 서버 설정")]
     public string hostIP = "192.168.0.121";   // 호스트(PC) 서버 IP 주소
-    [SerializeField] string portNum = "8080";   // 서버 포트 번호
+    [SerializeField] string portNum = "18080";   // 서버 포트 번호
     string serverAddress => $"ws://{hostIP}:{portNum}"; // WebSocket 서버 주소
 
     [Header("ack 주기 설정 (ms)")]
