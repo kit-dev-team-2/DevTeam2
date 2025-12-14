@@ -933,7 +933,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hostIP: 192.168.0.121
-  portNum: 18080
+  portNum: 8080
   ack_duration: 5000
 --- !u!1 &1140149730
 GameObject:
