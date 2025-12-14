@@ -30,7 +30,12 @@ namespace PassthroughCameraSamples.MultiObjectDetection
 
         [Header("Matching configuration")]
         [Tooltip("소리의 방향과 객체의 방향 사이의 최대 허용 각도입니다.")]
-        [SerializeField, Range(0, 90)] private float m_matchingAngleThreshold = 30.0f;
+        [SerializeField, Range(0, 30)] private float m_matchingAngleThreshold = 5.0f;
+        public void SetMatchingAngleThreshold(float value)
+        {
+            m_matchingAngleThreshold = value;
+        }
+
         [Tooltip("두 객체의 소리 방향 각도 차이가 이 값 미만일 경우, 모호한 상황으로 간주하여 거리 비교를 시작합니다.")]
         [SerializeField, Range(0, 10)] private float m_ambiguousAngleThreshold = 5.0f;
 
@@ -57,6 +62,11 @@ namespace PassthroughCameraSamples.MultiObjectDetection
         [SerializeField] private EnvironmentRayCastSampleManager m_environmentRaycast;
         [SerializeField] private float m_spawnDistance = 0.25f; // 최소 거리
         [SerializeField] private AudioSource m_placeSound;
+
+        [Header("UI Lifetime")]
+        [Tooltip("새로운 소리 이벤트가 없을 때 시각적 요소(마커, 경고)가 유지되는 시간(초)입니다.")]
+        [SerializeField] private float m_visualsLifetime = 2.0f;
+        private float m_visualsTimer;
 
         [Header("Sentis inference ref")]
         [SerializeField] private SentisInferenceRunManager m_runInference;
@@ -101,10 +111,28 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // 탐지가 시작되었고, 앱이 일시정지 상태가 아닐 때만 탐지 로직을 실행합니다.
             if (m_isStarted)
             {
+                // 매 프레임 WebSocket 연결 상태를 확인합니다.
+                if (QuestWsClient.Instance != null && !QuestWsClient.Instance.IsConnected())
+                {
+                    ClearAllDetectionVisuals();
+                    return;
+                }
+
                 if (!m_isPaused)
                 {
                     // 매 프레임, 새로운 소리와 매칭되는 객체가 있는지 확인하고 마커를 생성합니다.
                     SpawnMarkersForMatchedObjects();
+
+                    // 타이머가 활성화되어 있으면 시간을 감소시킵니다.
+                    if (m_visualsTimer > 0)
+                    {
+                        m_visualsTimer -= Time.deltaTime;
+                        if (m_visualsTimer <= 0)
+                        {
+                            // 타이머가 만료되면 모든 시각적 요소를 지웁니다.
+                            ClearAllDetectionVisuals();
+                        }
+                    }
                 }
                 else
                 {
@@ -178,6 +206,8 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             if (matchResult.ResultType != SoundMatchResultType.NoNewSound)
             {
                 ClearAllDetectionVisuals();
+                // 새로운 소리 이벤트가 감지되었으므로, 타이머를 초기화합니다.
+                m_visualsTimer = m_visualsLifetime;
             }
 
             if (matchResult.ResultType == SoundMatchResultType.MatchFound)

@@ -14,6 +14,6 @@ public class AppSettings
     [FormerlySerializedAs("DETECT_DURATION")]
     public float messageAlpha = 1.0f;
 
-    public float PRE_BUFFER_DURATION = 0.2f;
+    public float PRE_BUFFER_DURATION = 5f;
     public float MIC_SAD_DB = 23.5f;
 }

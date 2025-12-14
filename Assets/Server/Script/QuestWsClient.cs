@@ -19,6 +19,9 @@ public class QuestWsClient : MonoBehaviour
     [Header("ack 주기 설정 (ms)")]
     [SerializeField] int ack_duration = 5000;
 
+    [Header("데이터 유효 시간 (ms)")]
+    int data_valid_duration_ms = 1800;
+
     ClientWebSocket ws;
     CancellationTokenSource cts;
 
@@ -58,7 +61,7 @@ public class QuestWsClient : MonoBehaviour
     public class SoundResultMessage
     {
         public string type;      // "inference" 같은 값으로 맞춰두면 좋음
-        public string timestamp; // "17:16:31" 같은 문자열
+        public long timestamp; // 서버에서 보낸 Unix 타임스탬프 (ms)
         public int doa;        // 방향 없으면 0 쓰거나 필드 빼도 됨
         public TagItem[] tags;
     }
@@ -216,12 +219,21 @@ public class QuestWsClient : MonoBehaviour
     }
 
     /// <summary>
-    /// 가장 최근에 받은 SoundResultMessage 전체를 반환하고, 변수를 비워 중복 처리를 방지합니다.
+    /// 가장 최근에 받은 SoundResultMessage를 반환합니다. 데이터가 너무 오래되었으면 null을 반환합니다.
+    /// 한 번 가져간 데이터는 다시 반환하지 않습니다.
     /// </summary>
     public SoundResultMessage GetAndClearLatestSoundResult()
     {
         if (_latestSoundResult == null)
         {
+            return null;
+        }
+
+        // 현재 시간과 서버에서 메시지를 보낸 시간의 차이를 계산합니다.
+        long timeSinceSent = NowMs() - _latestSoundResult.timestamp;
+        if (timeSinceSent > data_valid_duration_ms)
+        {
+            _latestSoundResult = null; // 오래된 데이터는 버립니다.
             return null;
         }
 
