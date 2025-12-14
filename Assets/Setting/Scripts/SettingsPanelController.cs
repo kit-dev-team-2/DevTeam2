@@ -88,7 +88,7 @@ public class SettingsPanelController : MonoBehaviour
     public void OnPreBufferDurationSliderChanged(float value) => UpdatePreBufferDurationValueText(value);
     private void UpdatePreBufferDurationValueText(float value)
     {
-        preBufferDurationValueText.text = value.ToString("0.00") + " s";
+        preBufferDurationValueText.text = value.ToString("0.00") + "°";
     }
 
     private void ApplyMatchingAngleThresholdToDetectionManager()
