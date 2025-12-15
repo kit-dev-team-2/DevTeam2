@@ -230,12 +230,13 @@ public class QuestWsClient : MonoBehaviour
         }
 
         // 현재 시간과 서버에서 메시지를 보낸 시간의 차이를 계산합니다.
-        long timeSinceSent = NowMs() - _latestSoundResult.timestamp;
-        if (timeSinceSent > data_valid_duration_ms)
-        {
-            _latestSoundResult = null; // 오래된 데이터는 버립니다.
-            return null;
-        }
+        // long timeSinceSent = NowMs() - _latestSoundResult.timestamp;
+        // if (timeSinceSent > data_valid_duration_ms)
+        // {
+        //     Debug.Log($"[SoundResult] 데이터가 너무 오래되어 폐기합니다. 경과 시간: {timeSinceSent}ms > 유효 시간: {data_valid_duration_ms}ms");
+        //     _latestSoundResult = null; // 오래된 데이터는 버립니다.
+        //     return null;
+        // }
 
         SoundResultMessage resultToReturn = _latestSoundResult;
         _latestSoundResult = null; // 값을 가져갔으므로 비워줍니다.
