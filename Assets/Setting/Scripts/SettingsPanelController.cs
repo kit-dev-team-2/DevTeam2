@@ -88,7 +88,25 @@ public class SettingsPanelController : MonoBehaviour
     public void OnPreBufferDurationSliderChanged(float value) => UpdatePreBufferDurationValueText(value);
     private void UpdatePreBufferDurationValueText(float value)
     {
-        preBufferDurationValueText.text = value.ToString("0.00") + " s";
+        preBufferDurationValueText.text = value.ToString("0.00") + "°";
+    }
+
+    private void ApplyMatchingAngleThresholdToDetectionManager()
+    {
+        var dm = FindObjectOfType<DetectionManager>(true);
+        if (dm == null)
+        {
+            Debug.LogWarning("[SettingsPanel] DetectionManager not found.");
+            return;
+        }
+
+        if (SettingsManager.Instance == null || SettingsManager.Instance.Current == null)
+            return;
+
+        // A안: PRE_BUFFER_DURATION을 "각도 임계값(°)"으로 의미 재사용
+        float angleThres = SettingsManager.Instance.Current.PRE_BUFFER_DURATION;
+
+        dm.SetMatchingAngleThreshold(angleThres);
     }
 
     // 버튼
@@ -111,6 +129,7 @@ public class SettingsPanelController : MonoBehaviour
         s.PRE_BUFFER_DURATION = preBufferDurationSlider.value;
 
         SettingsManager.Instance.Save();
+        ApplyMatchingAngleThresholdToDetectionManager();
 
         // 2) 이모지 프리팹 스케일 적용
         var markerManager = FindObjectOfType<MarkerPrefabManager>();
