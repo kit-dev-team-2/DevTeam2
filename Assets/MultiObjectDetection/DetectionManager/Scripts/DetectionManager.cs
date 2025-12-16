@@ -296,17 +296,16 @@ namespace PassthroughCameraSamples.MultiObjectDetection
             // 오른쪽
             if (doa > 20 && doa <= m_soundObjectMatcher.sight)
             {
-                var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
+                var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
                 warningUI?.SetWarningText("오른쪽", soundLabel);
-                m_NoObjectInViewMsgRight.SetActive(true);
-
+                m_NoObjectInViewMsgLeft.SetActive(true);
             }
             // 왼쪽
             else if (doa >= 360 - m_soundObjectMatcher.sight && doa < 340)
             {
-                var warningUI = m_NoObjectInViewMsgLeft.GetComponent<InViewWarningUI>();
+                var warningUI = m_NoObjectInViewMsgRight.GetComponent<InViewWarningUI>();
                 warningUI?.SetWarningText("왼쪽", soundLabel);
-                m_NoObjectInViewMsgLeft.SetActive(true);
+                m_NoObjectInViewMsgRight.SetActive(true);
             }
             // 정면
             else

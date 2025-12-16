@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using PassthroughCameraSamples.MultiObjectDetection;
+using System.Collections;
+using System.Threading.Tasks;
 
 public class SettingsPanelController : MonoBehaviour
 {
@@ -171,4 +173,46 @@ public class SettingsPanelController : MonoBehaviour
         var panel = settingsPanel != null ? settingsPanel : gameObject;
         panel.SetActive(false);
     }
+
+    public async void OnClickQuitApp()
+    {
+        // 1) 탐지 중이면 멈춤(있는 경우)
+        var dm = FindObjectOfType<DetectionManager>(true);
+        if (dm != null) dm.OnPause(true);
+
+        // 2) WS 연결 안전 종료
+        if (QuestWsClient.Instance != null)
+        {
+            try
+            {
+                // 혹시 CloseAsync가 오래 걸리면 앱이 멈춘 것처럼 보일 수 있으니 타임아웃 권장
+                await WithTimeout(QuestWsClient.Instance.CloseConnection(), 1500);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[SettingsPanel] CloseConnection failed/timeout: " + e.Message);
+            }
+        }
+
+        // 3) 종료
+        SafeQuit();
+    }
+
+    private async Task WithTimeout(Task task, int timeoutMs)
+    {
+        var done = await Task.WhenAny(task, Task.Delay(timeoutMs));
+        if (done != task) throw new System.TimeoutException();
+        await task; // 예외 전파용
+    }
+
+    private void SafeQuit()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
 }
+
+
