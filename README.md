@@ -1,4 +1,6 @@
-# 소리 시각화 MR – Unity App
+# 소리 시각화 – Unity App
+
+![main](./images/image1.png)
 
 메타 퀘스트 PassThrough 화면 위에 주변 소리를 실시간으로 시각화하는 MR 애플리케이션용 Unity 프로젝트입니다.  
 외부 음성 분석 서버에서 전달된 소리 정보와 Meta Quest 카메라 기반 객체 인식 결과를 결합해, 실제 공간에 이모지·경고 UI로 표시합니다. 
@@ -10,9 +12,9 @@
 이 Unity App은 별도의 서버 저장소와 함께 동작합니다. 
 
 - Unity App 저장소  
-  - 예시: `https://github.com/kit-dev-team-2/DevTeam2` 
+  - `https://github.com/kit-dev-team-2/DevTeam2` 
 - 서버 저장소  
-  - 예시: `https://github.com/kit-dev-team-2/DevTeam2-Server`  
+  - `https://github.com/kit-dev-team-2/DevTeam2-Server`  
   - 서버 코드를 클론 및 실행한 뒤, 해당 서버에서 제공하는 WebSocket 주소를 Unity App 설정에 입력해 사용합니다.
 
 > 이 저장소는 **클라이언트(Meta Quest 앱)** 코드만 포함하며, 소리 분류·방향 분석은 서버 저장소에서 수행합니다. 
